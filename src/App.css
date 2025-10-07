@@ -1,0 +1,46 @@
+/* #root {
+  margin: 0 auto;
+
+} */
+/* 
+#root {
+  color: inherit
+
+} */
+#root {
+    --green-primary: #24982c;
+    --green-light: #38ee45;
+    --green-medium: #0acf59;
+    --green-dark: #002f18;
+    --green-medium-dark: #142616;
+    --green-ultra-dark: #001d0f;
+
+    --green-accent: #6dd20c;
+    --green-secondary: #0acf59;
+
+    --black: #293039;
+    --white: #ffffff;
+    --superwhite: #ffffff;
+    --white-ec: #ececec;
+    --white-f7: #f7f7f7;
+    --white-smoke: #f6f7f9;
+
+    --light-gray: #dce3dc;
+    --grey-1: whitesmoke;
+    --grey-2: #ebecec;
+
+    --text-dark: #1b1b1b;
+    --text-light: #4e4e4e;
+    --bg-default: #f5fdf6;
+    --bg-paper: #e8f5e9;
+}
+
+.App {
+    font-family: sans-serif;
+    /* text-align: center; */
+    background: white;
+}
+
+header {
+    box-shadow: none important!;
+}
