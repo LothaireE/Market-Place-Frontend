@@ -1,15 +1,80 @@
 import {
     Container,
     Typography,
-    Button,
+    // Button,
     Divider,
     Box,
     Paper,
 } from "@mui/material";
-import { useAppContext } from "../context/useAppContext";
+// import { useAppContext } from "../context/useAppContext";
+import { useAuthContext } from "../context/useAppContext";
+// import Dashboard from "../components/dashboard/Dashboard";
+import { gql, useQuery } from "@apollo/client";
+import DashboardGrid from "../components/dashboard/DashboardGrid";
+
+const pagination = {
+    page: null,
+    pageSize: null,
+    sortBy: null,
+    sortDirection: null,
+};
+
+const GET_PRODUCTS = gql`
+    # query Products($pagination: PaginationInput!, $filter: null) {
+    # query Products($pagination: PaginationInput!, $filter: ProductFilterInput) {
+    #     products(pagination: $pagination, filter: $filter) {
+    query Products($pagination: PaginationInput!) {
+        products(pagination: $pagination) {
+            items {
+                id
+                name
+                sellerProfile {
+                    user {
+                        #   id
+                        username
+                        email
+                    }
+                }
+            }
+            totalPages
+            totalProducts
+            currentPage
+        }
+    }
+`;
+
+type Product = {
+    id: string;
+    name: string;
+    sellerProfile: {
+        user: {
+            username: string;
+            email: string;
+        };
+    };
+};
+
+type ProductsQueryResponse = {
+    products: {
+        totalPages: number;
+        totalProducts: number;
+        currentPage: number;
+        items: Product[];
+    };
+};
 
 export default function Homepage() {
-    const { toggleTheme } = useAppContext();
+    // const { toggleTheme } = useAppContext();
+    // const context = useAppContext();
+    const context = useAuthContext();
+
+    // const { toggleTheme } = context;
+    const { loading, error, data } = useQuery<ProductsQueryResponse>(
+        GET_PRODUCTS,
+        { variables: { pagination: pagination } } //page } }
+    );
+
+    console.log("context homepage", context);
 
     return (
         <Container
@@ -19,7 +84,7 @@ export default function Homepage() {
             }}
             className="App"
         >
-            <Button onClick={toggleTheme}>toggle theme</Button>
+            {/* <Button onClick={toggleTheme}>toggle theme</Button> */}
             <Paper elevation={0}>
                 <Typography
                     variant="h1"
@@ -43,26 +108,21 @@ export default function Homepage() {
                     }}
                 >
                     <Typography>
-                        Lorem ipsum dolor sit amet, consectetur adipisicing
-                        elit. Ratione, inventore dolorem nemo libero minus quis
-                        eligendi saepe quam. Nisi quo porro soluta dolorum
-                        eligendi! Facere vel reiciendis corrupti officiis saepe.
+                        Welcome to our marketplace! Explore a wide range of
+                        products and enjoy music together.
                     </Typography>
                     <Divider sx={{ mb: 2 }} />
-                    <Typography>
-                        Lorem ipsum dolor sit, amet consectetur adipisicing
-                        elit. Laboriosam fugit totam neque repellendus
-                        voluptates? Odio, consequatur dolores. Nesciunt maxime
-                        facilis, eius enim, alias similique deserunt
-                        reprehenderit impedit rerum repudiandae ut.
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
-                    <Typography>
-                        Lorem ipsum dolor sit, amet consectetur adipisicing
-                        elit. Deserunt iusto id eos, dolorem optio facilis
-                        mollitia sequi necessitatibus tenetur error commodi ex
-                        laborum atque, vel pariatur saepe ab reprehenderit hic.
-                    </Typography>
+                    {error && <>error component to add</>}
+                    <DashboardGrid
+                        loading={loading}
+                        content={data?.products?.items ?? []}
+                        extractDisplay={(item) => ({
+                            id: item.id,
+                            name: item.name,
+                            sellerUsername: item.sellerProfile.user.username,
+                        })}
+                    />
+                    <Divider sx={{ my: 2 }} />
                 </Box>
             </Paper>
         </Container>

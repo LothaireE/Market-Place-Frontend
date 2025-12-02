@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import { useLocation, useNavigate } from "react-router";
 import {
     Container,
     Divider,
@@ -12,7 +12,8 @@ import {
 } from "@mui/material";
 import SignInForm from "./SignInForm";
 import SignUpForm from "./SignUpForm";
-import { useAppContext } from "../../context/useAppContext";
+// import { useAppContext } from "../../context/useAppContext";
+import { useAuthContext } from "../../context/useAppContext";
 import Toast from "../Toast";
 
 type SuccessDataType = {
@@ -21,7 +22,6 @@ type SuccessDataType = {
         username: string;
     };
     accessToken: string;
-    refreshToken: string;
 };
 
 const AuthForms = () => {
@@ -29,16 +29,30 @@ const AuthForms = () => {
     const [openToast, setOpenToast] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
 
-    const context = useAppContext();
+    const context = useAuthContext();
 
-    function handleSuccess(data: SuccessDataType) {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const from = location.state?.from?.pathname || "/";
+
+    function handleLoginSuccess(data: SuccessDataType) {
         if (!data) return;
 
         setToastMessage("Login successful! redirecting to home...");
         setOpenToast(true);
-        context.handeLogin?.(data);
+        // context.handeLogin?.(data);
+        context.setAccessToken?.(data.accessToken);
+        console.log({ data });
 
-        // redirect to home now
+        setTimeout(() => {
+            navigate(from, { replace: true });
+        }, 1500);
+    }
+
+    function handleSingUpSuccess() {
+        setTab(0);
+        setToastMessage("Sign up successful! You can now log in...");
+        setOpenToast(true);
     }
 
     return (
@@ -86,7 +100,9 @@ const AuthForms = () => {
                 >
                     <Box>
                         <SignInForm
-                            onSuccess={(data) => handleSuccess(data ?? null)}
+                            onSuccess={(data) =>
+                                handleLoginSuccess(data ?? null)
+                            }
                         />
                     </Box>
                 </Box>
@@ -97,11 +113,7 @@ const AuthForms = () => {
                     aria-labelledby="auth-tab-1"
                 >
                     <Box>
-                        <SignUpForm
-                            onSuccess={() => {
-                                setTab(0);
-                            }}
-                        />
+                        <SignUpForm onSuccess={handleSingUpSuccess} />
                     </Box>
                 </Box>
             </Paper>

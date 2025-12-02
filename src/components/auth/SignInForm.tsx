@@ -20,7 +20,6 @@ type SuccessData = {
         username: string;
     };
     accessToken: string;
-    refreshToken: string;
 };
 
 type SignInFormProps = {
@@ -54,6 +53,7 @@ const SignInForm = ({ onSuccess }: SignInFormProps) => {
         try {
             const response = await fetch(API_URLS.userLogin, {
                 method: "POST",
+                credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password, remember }),
             });

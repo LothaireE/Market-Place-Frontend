@@ -14,11 +14,15 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import AdbIcon from "@mui/icons-material/Adb";
+import { useAuthContext } from "../../context/useAppContext";
+import { useNavigate } from "react-router";
 
-const pages = ["Products", "Pricing", "Blog"];
+const pages = ["Products", "Create Product", "Blog"];
 const settings = ["Profile", "Account", "Dashboard", "Login", "Logout"];
 
 function CustomHeader() {
+    const authContext = useAuthContext();
+    const navigate = useNavigate();
     const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
     const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
@@ -29,20 +33,22 @@ function CustomHeader() {
         setAnchorElUser(event.currentTarget);
     };
 
-    const handleCloseNavMenu = () => {
+    const handleCloseNavMenu = (event: React.MouseEvent<HTMLElement>) => {
+        const target = event.target as HTMLElement;
         setAnchorElNav(null);
+        if (target.textContent === "Products") navigate("/");
+        if (target.textContent === "Create Product")
+            navigate("/create-product");
     };
 
-    const handleCloseUserMenu = (
-        event: React.MouseEvent<HTMLLIElement, MouseEvent>
-    ) => {
+    const handleCloseUserMenu = (event: React.MouseEvent<HTMLElement>) => {
         const target = event.target as HTMLElement;
         if (target.textContent === "Logout") {
-            console.log("logout"); // logout action to add here
+            authContext.logout?.();
+            navigate("/");
         }
-        if (target.textContent === "Login") {
-            console.log("login"); // login action to add here
-        }
+        if (target.textContent === "Login") navigate("/authenticate");
+
         setAnchorElUser(null);
     };
 
@@ -142,9 +148,9 @@ function CustomHeader() {
                             display: { xs: "none", md: "flex" },
                         }}
                     >
-                        {pages.map((page) => (
+                        {pages.map((page, idx) => (
                             <Button
-                                key={page}
+                                key={idx}
                                 onClick={handleCloseNavMenu}
                                 sx={{ my: 2, color: "white", display: "block" }}
                             >
