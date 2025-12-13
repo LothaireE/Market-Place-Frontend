@@ -1,8 +1,9 @@
-import { API_URLS } from "../config/config";
+import { API_URLS } from "../config/env";
 import { useAuthContext } from "../context/useAppContext";
+// import { useSellerProfile } from "./useSellerProfile";
 
 export function useApi() {
-    const { accessToken, setAccessToken } = useAuthContext();
+    const { accessToken, setAccessToken, logout } = useAuthContext();
 
     async function refresh() {
         const response = await fetch(API_URLS.refreshToken, {
@@ -19,7 +20,6 @@ export function useApi() {
 
     async function fetchWithAuth(input: RequestInfo, init?: RequestInit) {
         const tryOnce = async (token: string | null) => {
-            console.log("Fetching with token:", token);
             const headers = new Headers(init?.headers || {});
 
             if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -39,11 +39,21 @@ export function useApi() {
         if (response.status !== 401) return response; // if not unauthorized
 
         // 401 case with expired token for example
-        const newAccessToken = await refresh();
-        response = await tryOnce(newAccessToken);
+        try {
+            const newAccessToken = await refresh();
+            response = await tryOnce(newAccessToken);
 
-        return response;
+            return response;
+        } catch (error) {
+            logout();
+            throw error;
+        }
     }
 
     return { fetchWithAuth };
 }
+
+// export function useIsSeller() {
+//     const { sellerProfile } = useSellerProfile();
+//     return !!sellerProfile;
+// }

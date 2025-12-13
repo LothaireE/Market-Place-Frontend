@@ -12,11 +12,10 @@ import {
 } from "@mui/material";
 import SignInForm from "./SignInForm";
 import SignUpForm from "./SignUpForm";
-// import { useAppContext } from "../../context/useAppContext";
 import { useAuthContext } from "../../context/useAppContext";
-import Toast from "../Toast";
+import Toast from "../common/Toast";
 
-type SuccessDataType = {
+type LoginSuccessData = {
     user: {
         email: string;
         username: string;
@@ -35,14 +34,13 @@ const AuthForms = () => {
     const location = useLocation();
     const from = location.state?.from?.pathname || "/";
 
-    function handleLoginSuccess(data: SuccessDataType) {
+    function handleLoginSuccess(data: LoginSuccessData) {
         if (!data) return;
 
         setToastMessage("Login successful! redirecting to home...");
         setOpenToast(true);
         // context.handeLogin?.(data);
         context.setAccessToken?.(data.accessToken);
-        console.log({ data });
 
         setTimeout(() => {
             navigate(from, { replace: true });

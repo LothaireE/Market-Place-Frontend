@@ -10,8 +10,8 @@ import {
     Typography,
 } from "@mui/material";
 import PasswordField from "./PasswordField";
-import LinkButton from "../material-ui/MuiLink";
-import { API_URLS } from "../../config/config";
+import LinkButton from "../common/RouterLinkButton";
+import { API_URLS } from "../../config/env";
 
 type User = { id: string; email: string; username: string };
 

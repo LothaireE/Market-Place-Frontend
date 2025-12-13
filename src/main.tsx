@@ -1,33 +1,80 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import { createBrowserRouter, RouterProvider } from "react-router";
+import { ApolloProvider } from "@apollo/client";
+import { graphqlClient } from "./library/graphql/client.ts";
+
 import App from "./App.tsx";
-import Homepage from "./pages/Homepage";
-// import Dashboard from "./components/dashboard/Dashboard.tsx";
+import HomePage from "./pages/home/HomePage.tsx";
 import Details from "./pages/Details";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
-import { createBrowserRouter, RouterProvider } from "react-router";
-import { ApolloProvider } from "@apollo/client";
-import { client } from "./library/client.ts";
-// import AppContextProvider from "./context/appContextProvider.tsx";
-import Authenticate from "./pages/Authenticate.tsx";
-import CreateProduct from "./pages/CreateProduct.tsx";
-import AuthContextProvider from "./context/authContextProvider.tsx";
-import UpdateProduct from "./pages/UpdateProduct.tsx";
+import Authenticate from "./pages/auth/Authenticate.tsx";
+import ProtectedRoute from "./components/layout/ProtectedRoute.tsx";
+import ProfilePage from "./pages/account/ProfilePage.tsx";
+import OrdersPage from "./pages/account/OrdersPage.tsx";
+import FavoritesPage from "./pages/account/FavoritesPage.tsx";
+import CartPage from "./pages/account/CartPage.tsx";
+import SellerDashboardPage from "./pages/seller/SellerDashboardPage.tsx";
+import SellerProductDetailPage from "./pages/seller/SellerProductDetailPage.tsx";
+import SellerProductListPage from "./pages/seller/SellerProductListPage.tsx";
+import SellerProductFormPage from "./pages/seller/SellerProductCreatePage.tsx";
+import SellerRoute from "./components/layout/SellerRoute.tsx";
+import SellerProfilePage from "./pages/seller/SellerProfilePage.tsx";
+import AccountLayout from "./pages/account/AccountLayout.tsx";
+import SellerLayout from "./pages/seller/SellerLayout.tsx";
+import SellerProductEditPage from "./pages/seller/SellerProductEditPage.tsx";
 
 const router = createBrowserRouter([
     {
         path: "/",
         element: <App />,
         children: [
-            { path: "/", element: <Homepage /> },
-            // { path: "/dashboard", element: <Dashboard /> },
+            { index: true, element: <HomePage /> },
             { path: "/product-details/:id", element: <Details /> },
-            { path: "/create-product", element: <CreateProduct /> },
-            { path: "/update-product/:id", element: <UpdateProduct /> },
             { path: "/about", element: <About /> },
             { path: "/authenticate", element: <Authenticate /> },
+            {
+                path: "/account",
+                element: (
+                    <ProtectedRoute>
+                        <AccountLayout />
+                    </ProtectedRoute>
+                ),
+                children: [
+                    { index: true, element: <ProfilePage /> },
+                    { path: "orders", element: <OrdersPage /> },
+                    { path: "favorites", element: <FavoritesPage /> },
+                    { path: "cart", element: <CartPage /> },
+                ],
+            },
+            {
+                path: "/seller",
+                element: (
+                    <SellerRoute>
+                        <SellerLayout />
+                    </SellerRoute>
+                ),
+                children: [
+                    { index: true, element: <SellerDashboardPage /> },
+                    { path: "products", element: <SellerProductListPage /> },
+                    {
+                        path: "products/:id",
+                        element: <SellerProductDetailPage />,
+                    },
+
+                    {
+                        path: "products/:id/edit",
+                        element: <SellerProductEditPage />,
+                    },
+                    {
+                        path: "products/new",
+                        element: <SellerProductFormPage />,
+                    },
+                    { path: "profile", element: <SellerProfilePage /> },
+                ],
+            },
             { path: "*", element: <NotFound /> },
         ],
     },
@@ -36,10 +83,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <AuthContextProvider>
-            <ApolloProvider client={client}>
-                <RouterProvider router={router} />
-            </ApolloProvider>
-        </AuthContextProvider>
+        <ApolloProvider client={graphqlClient}>
+            <RouterProvider router={router} />
+        </ApolloProvider>
     </StrictMode>
 );

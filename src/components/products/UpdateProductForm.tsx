@@ -12,19 +12,18 @@ import {
     InputLabel,
     Divider,
     IconButton,
+    Paper,
 } from "@mui/material";
-import { NumberField } from "@base-ui-components/react/number-field";
 import { styled } from "@mui/material/styles";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import AddIcon from "@mui/icons-material/Add";
-import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { capitalizeFirstLetter } from "../../utils/textFormat";
-import { API_URLS } from "../../config/config";
+import { API_URLS } from "../../config/env";
 import { useApi } from "../../hooks/useApi";
 import { useNavigate } from "react-router";
-
-import type { ProductDetail, ProductImage } from "../../pages/UpdateProduct";
+import type { ProductCondition, ProductImage } from "../../types/product.type";
+import PriceInput from "../common/PriceInput";
+import CustomAccordion from "../common/CustomAccordion";
 
 const VisuallyHiddenInput = styled("input")({
     clip: "rect(0 0 0 0)",
@@ -38,9 +37,7 @@ const VisuallyHiddenInput = styled("input")({
     width: 1,
 });
 
-type ConditionType = "EXCELLENT" | "GOOD" | "CORRECT" | "USED" | "DAMAGED";
-
-const conditions: ConditionType[] = [
+const conditions: ProductCondition[] = [
     "EXCELLENT",
     "GOOD",
     "CORRECT",
@@ -49,8 +46,22 @@ const conditions: ConditionType[] = [
 ];
 
 type UpdateProductFormProps = {
-    product: ProductDetail;
+    product: {
+        id: string;
+        name: string;
+        condition: ProductCondition;
+        description: string;
+        price: number;
+        sellerProfile: {
+            user: {
+                username: string;
+                email: string;
+            };
+        };
+        images: [ProductImage];
+    };
     onSuccess?: (data: unknown) => void;
+    mode: "read" | "edit" | "create";
 };
 
 type NewImage = {
@@ -58,24 +69,31 @@ type NewImage = {
     previewUrl: string;
 };
 
-const UpdateProductForm = ({ product, onSuccess }: UpdateProductFormProps) => {
+//TODO: split, refactorer and all there is t shorten UpdateProductForm now
+
+const UpdateProductForm = ({
+    product,
+    onSuccess,
+    mode,
+}: UpdateProductFormProps) => {
+    const isReadOnly = mode === "read";
     const { fetchWithAuth } = useApi();
     const navigate = useNavigate();
 
     const [productName, setProductName] = useState(product.name);
-    const [price, setPrice] = useState<number>(product.price);
-    const [condition, setCondition] = useState<ConditionType>(
-        product.condition as ConditionType
+    const [price, setPrice] = useState<number>(product.price ?? 0);
+    const [condition, setCondition] = useState<ProductCondition>(
+        product.condition as ProductCondition
     );
     const [description, setDescription] = useState(product.description ?? "");
-    const [size, setSize] = useState<string>("");
-    const [color, setColor] = useState<string>("");
+    const [brand, setBrand] = useState<string>(""); // stored in `size`
+    const [model, setModel] = useState<string>(""); // stored in `color`
     const [accept, setAccept] = useState(true);
 
     const [existingImages, setExistingImages] = useState<ProductImage[]>(
         product.images ?? []
     );
-    const [imagesToDelete, setImagesToDelete] = useState<string[]>([]); // list of publicId to remove from cloudinay
+    const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
     const [newImages, setNewImages] = useState<NewImage[]>([]);
 
     const [loading, setLoading] = useState(false);
@@ -86,13 +104,13 @@ const UpdateProductForm = ({ product, onSuccess }: UpdateProductFormProps) => {
         // refetch if product changes
         setProductName(product.name);
         setPrice(product.price);
-        setCondition(product.condition as ConditionType);
+        setCondition(product.condition as ProductCondition);
         setDescription(product.description ?? "");
         setExistingImages(product.images ?? []);
     }, [product]);
 
     useEffect(() => {
-        // clean previsualisation urls when component unmount
+        // clean preview urls when component unmount
         return () => {
             newImages.forEach((img) => URL.revokeObjectURL(img.previewUrl));
         };
@@ -101,7 +119,7 @@ const UpdateProductForm = ({ product, onSuccess }: UpdateProductFormProps) => {
     const handleChangeCondition = (
         event: React.ChangeEvent<HTMLSelectElement>
     ) => {
-        const value = event.target.value as ConditionType;
+        const value = event.target.value as ProductCondition;
         setCondition(value);
     };
 
@@ -114,6 +132,7 @@ const UpdateProductForm = ({ product, onSuccess }: UpdateProductFormProps) => {
     };
 
     const handleAddNewImages = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (isReadOnly) return;
         const files = Array.from(event.target.files ?? []);
         if (!files.length) return;
 
@@ -140,9 +159,16 @@ const UpdateProductForm = ({ product, onSuccess }: UpdateProductFormProps) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isReadOnly) return;
         setError(null);
         setInfo(null);
         setLoading(true);
+
+        if (!accept) {
+            setError("You must accept the terms before updating your listing.");
+            setLoading(false);
+            return;
+        }
 
         try {
             const formData = new FormData();
@@ -159,8 +185,8 @@ const UpdateProductForm = ({ product, onSuccess }: UpdateProductFormProps) => {
             formData.append("price", String(price));
             formData.append("condition", condition);
             formData.append("description", description);
-            formData.append("size", size);
-            formData.append("color", color);
+            formData.append("size", brand);
+            formData.append("color", model);
 
             const response = await fetchWithAuth(API_URLS.updateProduct, {
                 method: "PUT",
@@ -170,12 +196,12 @@ const UpdateProductForm = ({ product, onSuccess }: UpdateProductFormProps) => {
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(
-                    errorData.message || "Failed to update product."
+                    errorData.message || "Failed to update listing."
                 );
             }
 
             const data = await response.json();
-            setInfo("Product successfully updated!");
+            setInfo("Listing successfully updated!");
             onSuccess?.(data ?? null);
 
             setTimeout(() => {
@@ -193,332 +219,424 @@ const UpdateProductForm = ({ product, onSuccess }: UpdateProductFormProps) => {
     };
 
     return (
-        <Box>
-            <Box>
-                <Typography component="h1" variant="h5">
-                    <ul>
-                        <li>Product Name: {productName}</li>
-                        <li>Size: {size}</li>
-                        <li>Color: {color}</li>
-                        <li>Description: {description}</li>
-                        <li>Price: {price}</li>
-                        <li>Condition: {condition}</li>
-                        <li>
-                            Existing images: {existingImages.length} (to delete:{" "}
-                            {imagesToDelete.length})
-                        </li>
-                        <li>New images selected: {newImages.length}</li>
-                    </ul>
+        <Box sx={{ maxWidth: 900, mx: "auto", mt: 3 }}>
+            <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+                <Typography component="h1" variant="h5" sx={{ mb: 1 }}>
+                    Edit instrument listing
                 </Typography>
-            </Box>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 3 }}
+                >
+                    Update the details of your instrument so buyers have the
+                    most accurate information.
+                </Typography>
 
-            <Box
-                component="form"
-                noValidate
-                sx={{ mt: 1 }}
-                onSubmit={handleSubmit}
-            >
-                <Stack spacing={3}>
-                    <TextField
-                        label="Name"
-                        variant="standard"
-                        value={productName}
-                        onChange={(e) => setProductName(e.target.value)}
-                        fullWidth
-                        required
-                        helperText="Name your product"
-                        id="product-name-input"
-                        name="productName"
-                    />
+                {/* Small live preview */}
+                <Box
+                    sx={{
+                        mb: 3,
+                        p: 2,
+                        borderRadius: 2,
+                        bgcolor: "background.default",
+                        border: (theme) =>
+                            `1px dashed ${theme.palette.divider}`,
+                    }}
+                >
+                    <Typography variant="subtitle2" gutterBottom>
+                        Listing preview
+                    </Typography>
+                    <Typography variant="body2">
+                        <strong>{productName}</strong> • {brand || "Brand"}{" "}
+                        {model || "Model"} • {condition} • {price} €
+                    </Typography>
+                </Box>
 
-                    <TextField
-                        label="Size"
-                        variant="standard"
-                        value={size}
-                        onChange={(e) => setSize(e.target.value)}
-                        fullWidth
-                        id="size-input"
-                        name="productSize"
-                    />
+                <Box
+                    component="form"
+                    noValidate
+                    sx={{ mt: 1 }}
+                    onSubmit={handleSubmit}
+                >
+                    <Stack spacing={3}>
+                        <TextField
+                            label="Item name"
+                            variant="standard"
+                            value={productName}
+                            onChange={(e) => setProductName(e.target.value)}
+                            fullWidth
+                            required
+                            helperText='Example: "Gibson Les Paul Studio", "Roland FP-10 Digital Piano"'
+                            id="product-name-input"
+                            name="productName"
+                            slotProps={{
+                                input: {
+                                    readOnly: isReadOnly,
+                                },
+                            }}
+                        />
 
-                    <TextField
-                        label="Color"
-                        variant="standard"
-                        value={color}
-                        onChange={(e) => setColor(e.target.value)}
-                        fullWidth
-                        id="color-input"
-                        name="productColor"
-                    />
-
-                    <InputLabel
-                        variant="standard"
-                        htmlFor="condition-select"
-                        required
-                    >
-                        Condition
-                    </InputLabel>
-                    <NativeSelect
-                        inputProps={{
-                            name: "condition",
-                            id: "condition-select",
-                        }}
-                        value={condition}
-                        onChange={handleChangeCondition}
-                        sx={{ maxWidth: "fit-content" }}
-                    >
-                        {conditions.map((cond) => (
-                            <option key={cond} value={cond}>
-                                {capitalizeFirstLetter(cond)}
-                            </option>
-                        ))}
-                    </NativeSelect>
-
-                    <TextField
-                        id="product-description-input"
-                        label="Description"
-                        multiline
-                        maxRows={4}
-                        variant="standard"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                    />
-
-                    <InputLabel
-                        variant="standard"
-                        htmlFor="price-input"
-                        required
-                    >
-                        Price
-                    </InputLabel>
-                    <NumberField.Root
-                        value={price}
-                        min={1}
-                        max={10000}
-                        step={1}
-                        onValueChange={(value) => value && setPrice(value)}
-                        id="price-input"
-                    >
-                        <NumberField.ScrubArea>
-                            <NumberField.ScrubAreaCursor />
-                        </NumberField.ScrubArea>
-                        <NumberField.Group>
-                            <NumberField.Decrement>
-                                <RemoveIcon />
-                            </NumberField.Decrement>
-                            <NumberField.Input />
-                            <NumberField.Increment>
-                                <AddIcon />
-                            </NumberField.Increment>
-                        </NumberField.Group>
-                    </NumberField.Root>
-
-                    {/* existing images */}
-                    <Box>
-                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                            Existing pictures
-                        </Typography>
-                        {existingImages.length === 0 ? (
-                            <Typography variant="body2">
-                                No existing picture.
-                            </Typography>
-                        ) : (
-                            <Stack
-                                direction="row"
-                                spacing={2}
-                                flexWrap="wrap"
-                                useFlexGap
-                            >
-                                {existingImages.map((img) => {
-                                    const markedForDelete =
-                                        imagesToDelete.includes(img.publicId);
-                                    return (
-                                        <Box
-                                            key={img.publicId}
-                                            sx={{
-                                                position: "relative",
-                                                width: 120,
-                                                height: 120,
-                                                borderRadius: 1,
-                                                overflow: "hidden",
-                                                border: "1px solid #ddd",
-                                                opacity: markedForDelete
-                                                    ? 0.4
-                                                    : 1,
-                                            }}
-                                        >
-                                            <Box
-                                                component="img"
-                                                src={img.url}
-                                                alt={img.name || img.publicId}
-                                                sx={{
-                                                    width: "100%",
-                                                    height: "100%",
-                                                    objectFit: "cover",
-                                                }}
-                                            />
-                                            <IconButton
-                                                size="small"
-                                                onClick={() =>
-                                                    toggleDeleteExistingImage(
-                                                        img.publicId
-                                                    )
-                                                }
-                                                sx={{
-                                                    position: "absolute",
-                                                    top: 2,
-                                                    right: 2,
-                                                    bgcolor: "rgba(0,0,0,0.4)",
-                                                    "&:hover": {
-                                                        bgcolor:
-                                                            "rgba(0,0,0,0.6)",
-                                                    },
-                                                }}
-                                            >
-                                                <DeleteIcon
-                                                    fontSize="small"
-                                                    sx={{
-                                                        color: markedForDelete
-                                                            ? "red"
-                                                            : "white",
-                                                    }}
-                                                />
-                                            </IconButton>
-                                        </Box>
-                                    );
-                                })}
-                            </Stack>
-                        )}
-                        {existingImages.length > 0 && (
-                            <Typography variant="caption">
-                                Click on the trash icon to mark / unmark an
-                                image for deletion.
-                            </Typography>
-                        )}
-                    </Box>
-
-                    <Divider sx={{ my: 2 }} />
-
-                    {/* new images select */}
-                    <Box>
-                        <Button
-                            component="label"
-                            role={undefined}
-                            variant="contained"
-                            tabIndex={-1}
-                            startIcon={<CloudUploadIcon />}
-                            sx={{ maxWidth: 300, alignSelf: "center" }}
+                        <Stack
+                            direction={{ xs: "column", sm: "row" }}
+                            spacing={2}
                         >
-                            Upload new pictures
-                            <VisuallyHiddenInput
-                                type="file"
-                                accept="image/*"
-                                onChange={handleAddNewImages}
-                                multiple
+                            <TextField
+                                label="Brand"
+                                variant="standard"
+                                value={brand}
+                                onChange={(e) => setBrand(e.target.value)}
+                                fullWidth
+                                id="brand-input"
+                                name="productBrand"
+                                slotProps={{
+                                    input: {
+                                        readOnly: isReadOnly,
+                                    },
+                                }}
+                                disabled={isReadOnly}
                             />
-                        </Button>
+                            <TextField
+                                label="Model / Reference"
+                                variant="standard"
+                                value={model}
+                                onChange={(e) => setModel(e.target.value)}
+                                fullWidth
+                                id="model-input"
+                                name="productModel"
+                                slotProps={{
+                                    input: {
+                                        readOnly: isReadOnly,
+                                    },
+                                }}
+                                disabled={isReadOnly}
+                            />
+                        </Stack>
 
-                        {newImages.length > 0 && (
-                            <Box sx={{ mt: 2 }}>
-                                <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                                    New pictures
+                        <Box>
+                            <InputLabel
+                                variant="standard"
+                                htmlFor="condition-select"
+                                required
+                            >
+                                Condition
+                            </InputLabel>
+                            <NativeSelect
+                                disabled={isReadOnly}
+                                inputProps={{
+                                    name: "condition",
+                                    id: "condition-select",
+                                }}
+                                value={condition}
+                                onChange={handleChangeCondition}
+                                sx={{ maxWidth: "fit-content" }}
+                            >
+                                {conditions.map((cond) => (
+                                    <option key={cond} value={cond}>
+                                        {capitalizeFirstLetter(
+                                            cond.toLowerCase()
+                                        )}
+                                    </option>
+                                ))}
+                            </NativeSelect>
+                        </Box>
+
+                        <TextField
+                            id="product-description-input"
+                            label="Description"
+                            multiline
+                            minRows={3}
+                            variant="standard"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            helperText="Mention wear and tear, service history, playability, noise issues, and included accessories."
+                            slotProps={{
+                                input: {
+                                    readOnly: isReadOnly,
+                                },
+                            }}
+                        />
+
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
+                        >
+                            <InputLabel
+                                variant="standard"
+                                htmlFor="price-input"
+                                required
+                            >
+                                Price (€)
+                            </InputLabel>
+
+                            <PriceInput
+                                isDisabled={isReadOnly}
+                                handleSetPrice={setPrice}
+                                price={price}
+                            />
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                id="subtext"
+                            >
+                                Set a fair price based on condition and current
+                                market value.
+                            </Typography>
+                        </Box>
+
+                        <Box>
+                            {existingImages.length === 0 ? (
+                                <Typography variant="body2">
+                                    There is currentely no picture for this
+                                    article.
                                 </Typography>
+                            ) : (
                                 <Stack
                                     direction="row"
                                     spacing={2}
                                     flexWrap="wrap"
                                     useFlexGap
                                 >
-                                    {newImages.map((img, index) => (
-                                        <Box
-                                            key={index}
-                                            sx={{
-                                                position: "relative",
-                                                width: 120,
-                                                height: 120,
-                                                borderRadius: 1,
-                                                overflow: "hidden",
-                                                border: "1px solid #ddd",
-                                            }}
-                                        >
+                                    {existingImages.map((img) => {
+                                        const markedForDelete =
+                                            imagesToDelete.includes(
+                                                img.publicId
+                                            );
+                                        return (
                                             <Box
-                                                component="img"
-                                                src={img.previewUrl}
-                                                alt={img.file.name}
+                                                key={img.publicId}
                                                 sx={{
-                                                    width: "100%",
-                                                    height: "100%",
-                                                    objectFit: "cover",
-                                                }}
-                                            />
-                                            <IconButton
-                                                size="small"
-                                                onClick={() =>
-                                                    handleRemoveNewImage(index)
-                                                }
-                                                sx={{
-                                                    position: "absolute",
-                                                    top: 2,
-                                                    right: 2,
-                                                    bgcolor: "rgba(0,0,0,0.4)",
-                                                    "&:hover": {
-                                                        bgcolor:
-                                                            "rgba(0,0,0,0.6)",
-                                                    },
+                                                    position: "relative",
+                                                    width: 120,
+                                                    height: 120,
+                                                    borderRadius: 1,
+                                                    overflow: "hidden",
+                                                    border: "1px solid #ddd",
+                                                    opacity: markedForDelete
+                                                        ? 0.4
+                                                        : 1,
                                                 }}
                                             >
-                                                <DeleteIcon
-                                                    fontSize="small"
-                                                    sx={{ color: "white" }}
+                                                <Box
+                                                    component="img"
+                                                    src={img.url}
+                                                    alt={
+                                                        img.name || img.publicId
+                                                    }
+                                                    sx={{
+                                                        width: "100%",
+                                                        height: "100%",
+                                                        objectFit: "cover",
+                                                    }}
                                                 />
-                                            </IconButton>
-                                        </Box>
-                                    ))}
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() =>
+                                                        toggleDeleteExistingImage(
+                                                            img.publicId
+                                                        )
+                                                    }
+                                                    sx={{
+                                                        position: "absolute",
+                                                        top: 2,
+                                                        right: 2,
+                                                        bgcolor:
+                                                            "rgba(0,0,0,0.4)",
+                                                        "&:hover": {
+                                                            bgcolor:
+                                                                "rgba(0,0,0,0.6)",
+                                                        },
+                                                    }}
+                                                >
+                                                    <DeleteIcon
+                                                        fontSize="small"
+                                                        sx={{
+                                                            color: markedForDelete
+                                                                ? "red"
+                                                                : "white",
+                                                        }}
+                                                    />
+                                                </IconButton>
+                                            </Box>
+                                        );
+                                    })}
                                 </Stack>
-                            </Box>
+                            )}
+                            {existingImages.length > 0 && (
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                    Click the trash icon to mark / unmark a
+                                    photo for deletion.
+                                </Typography>
+                            )}
+                        </Box>
+
+                        {/* <Divider sx={{ my: 2 }} /> */}
+
+                        {/* new images select */}
+                        <Box>
+                            <CustomAccordion
+                                isDisabled={isReadOnly}
+                                open={!isReadOnly}
+                            >
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <Button
+                                        component="label"
+                                        role={undefined}
+                                        variant="contained"
+                                        tabIndex={-1}
+                                        startIcon={<CloudUploadIcon />}
+                                        sx={{
+                                            maxWidth: 320,
+                                            alignSelf: "center",
+                                        }}
+                                        disabled={isReadOnly}
+                                    >
+                                        Upload new photos
+                                        <VisuallyHiddenInput
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleAddNewImages}
+                                            multiple
+                                            disabled={isReadOnly}
+                                        />
+                                    </Button>
+                                </Box>
+                            </CustomAccordion>
+                            {newImages.length > 0 && (
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography
+                                        variant="subtitle1"
+                                        sx={{ mb: 1 }}
+                                    >
+                                        New photos
+                                    </Typography>
+                                    <Stack
+                                        direction="row"
+                                        spacing={2}
+                                        flexWrap="wrap"
+                                        useFlexGap
+                                    >
+                                        {newImages.map((img, index) => (
+                                            <Box
+                                                key={index}
+                                                sx={{
+                                                    position: "relative",
+                                                    width: 120,
+                                                    height: 120,
+                                                    borderRadius: 1,
+                                                    overflow: "hidden",
+                                                    border: "1px solid #ddd",
+                                                }}
+                                            >
+                                                <Box
+                                                    component="img"
+                                                    src={img.previewUrl}
+                                                    alt={img.file.name}
+                                                    sx={{
+                                                        width: "100%",
+                                                        height: "100%",
+                                                        objectFit: "cover",
+                                                    }}
+                                                />
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() =>
+                                                        handleRemoveNewImage(
+                                                            index
+                                                        )
+                                                    }
+                                                    sx={{
+                                                        position: "absolute",
+                                                        top: 2,
+                                                        right: 2,
+                                                        bgcolor:
+                                                            "rgba(0,0,0,0.4)",
+                                                        "&:hover": {
+                                                            bgcolor:
+                                                                "rgba(0,0,0,0.6)",
+                                                        },
+                                                    }}
+                                                >
+                                                    <DeleteIcon
+                                                        fontSize="small"
+                                                        sx={{ color: "white" }}
+                                                    />
+                                                </IconButton>
+                                            </Box>
+                                        ))}
+                                    </Stack>
+                                </Box>
+                            )}
+                        </Box>
+
+                        <Divider sx={{ mb: 2 }} />
+                        {/* <AccordionPic isReadOnly={isReadOnly} />
+                        <Divider sx={{ mb: 2 }} /> */}
+
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={accept}
+                                    onChange={(e) =>
+                                        setAccept(e.target.checked)
+                                    }
+                                    color="primary"
+                                />
+                            }
+                            label="I confirm that these details are accurate and accept the marketplace terms."
+                        />
+
+                        {error && (
+                            <Typography color="error" variant="body2">
+                                {error}
+                            </Typography>
                         )}
-                    </Box>
+                        {info && (
+                            <Typography color="primary" variant="body2">
+                                {info}
+                            </Typography>
+                        )}
 
-                    <Divider sx={{ mb: 2 }} />
-
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={accept}
-                                onChange={(e) => setAccept(e.target.checked)}
+                        <Box
+                            sx={{ display: "flex", justifyContent: "flex-end" }}
+                        >
+                            <Button
+                                type="submit"
+                                fullWidth
+                                variant="contained"
                                 color="primary"
-                            />
-                        }
-                        label="Accept terms and conditions"
-                    />
-
-                    {error && <Typography color="error">{error}</Typography>}
-                    {info && <Typography color="primary">{info}</Typography>}
-
-                    <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        color="primary"
-                        disabled={loading || !accept}
-                        sx={{
-                            maxWidth: 300,
-                            mt: 3,
-                            mb: 2,
-                            alignSelf: "end",
-                        }}
-                    >
-                        {loading ? (
-                            <>
-                                <CircularProgress size={20} sx={{ mr: 1 }} />{" "}
-                                Processing...
-                            </>
-                        ) : (
-                            "Update Product"
-                        )}
-                    </Button>
-                </Stack>
-            </Box>
+                                disabled={loading || !accept}
+                                sx={{
+                                    maxWidth: 260,
+                                    mt: 1,
+                                }}
+                            >
+                                {loading ? (
+                                    <>
+                                        <CircularProgress
+                                            size={20}
+                                            sx={{ mr: 1 }}
+                                        />{" "}
+                                        Saving…
+                                    </>
+                                ) : (
+                                    "Save changes"
+                                )}
+                            </Button>
+                        </Box>
+                    </Stack>
+                </Box>
+            </Paper>
         </Box>
     );
 };
