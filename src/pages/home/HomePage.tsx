@@ -1,24 +1,13 @@
 import { useQuery } from "@apollo/client";
-// import DashboardGrid from "../../components/dashboard/DashboardGrid";
-import {
-    // GET_PRODUCTS,
-    GET_PRODUCTS_HOMEPAGE,
-} from "../../library/graphql/queries/products";
+import { GET_PRODUCTS_HOMEPAGE } from "../../library/graphql/queries/products";
 import type { Product } from "../../types/product.type";
-import {
-    Box,
-    Container,
-    Typography,
-    Button,
-    Grid,
-    Chip,
-    Stack,
-} from "@mui/material";
+import { Box, Container, Typography, Button, Grid, Stack } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import HeroBanner from "../../components/hero-banner/HeroBanner";
 import SellSection from "../../components/common/SellSection";
-// import AdvantagesStrip from "../../components/advantages/AdvantagesStrip";
 import ProductCard from "../../components/products/ProductCard";
+import CategoryStrip from "../../components/products/CategoryStrip";
+import { useNavigate } from "react-router";
 
 const pagination = {
     page: null,
@@ -26,17 +15,6 @@ const pagination = {
     sortBy: null,
     sortDirection: null,
 };
-
-const categories = [
-    "Femme",
-    "Homme",
-    "Enfant",
-    "Luxe",
-    "Maison",
-    "Électronique",
-    "Sport",
-    "Vintage",
-];
 
 export type ProductsQueryResponse = {
     products: {
@@ -50,34 +28,33 @@ export type ProductsQueryResponse = {
 const HomePage = () => {
     const { loading, error, data } = useQuery<ProductsQueryResponse>(
         GET_PRODUCTS_HOMEPAGE,
-        { variables: { pagination: pagination } } //page } }
+        { variables: { pagination } }
     );
-
+    const navigate = useNavigate();
     console.log({ loading, error, data });
+
     return (
         <Box>
-            {/* Hero section */}
+            {/* Banner */}
             <HeroBanner />
 
-            {/* Catégories */}
+            {/* Categories */}
             <CategoryStrip />
 
-            {/* Produits mis en avant */}
-            {/* <Container maxWidth="lg" sx={{ py: 4 }}> */}
+            {/*  products */}
             <Container maxWidth="lg">
                 <SectionHeader
-                    title="Les dernières pépites"
-                    subtitle="Découvre les derniers articles mis en ligne"
-                    actionLabel="Voir tout"
+                    title="Latest finds"
+                    subtitle="Discover the newest items posted"
+                    actionLabel="See all"
                     onActionClick={() => {
-                        // navigate("/products")
+                        navigate("/products");
                     }}
                 />
 
-                <Grid container spacing={3}>
+                <Grid container spacing={3} py={1}>
                     {data?.products.items.map((product) => (
-                        // <Grid key={product.id} item xs={12} sm={6} md={3} >
-                        <Grid key={product.id}>
+                        <Grid size={{ xs: 6, md: 3 }} key={product.id}>
                             <ProductCard {...product} />
                         </Grid>
                     ))}
@@ -90,40 +67,6 @@ const HomePage = () => {
 };
 
 export default HomePage;
-
-const CategoryStrip = () => {
-    return (
-        <Box
-            sx={{
-                bgcolor: "background.paper",
-                borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-            }}
-        >
-            <Container
-                maxWidth="lg"
-                sx={{
-                    py: 1.5,
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 1,
-                }}
-            >
-                {categories.map((cat) => (
-                    <Chip
-                        key={cat}
-                        label={cat}
-                        clickable
-                        sx={{
-                            borderRadius: 999,
-                            fontWeight: 500,
-                        }}
-                        // onClick={() => navigate(`/products?category=${cat}`)}
-                    />
-                ))}
-            </Container>
-        </Box>
-    );
-};
 
 type SectionHeaderProps = {
     title: string;
@@ -149,12 +92,14 @@ const SectionHeader = ({
                 <Typography variant="h5" fontWeight={600}>
                     {title}
                 </Typography>
+
                 {subtitle && (
                     <Typography variant="body2" color="text.secondary">
                         {subtitle}
                     </Typography>
                 )}
             </Box>
+
             {actionLabel && (
                 <Button
                     size="small"
@@ -167,5 +112,3 @@ const SectionHeader = ({
         </Stack>
     );
 };
-
-// type Product = (typeof mockProducts)[number];

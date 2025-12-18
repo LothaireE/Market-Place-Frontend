@@ -1,16 +1,19 @@
 import { createContext } from "react";
 // import type { Favorite } from "./favoritesContextProvider";
+import type { FavoriteProduct } from "../types/product.type";
 
 export type FavoriteContextType = {
-    favorites: string[] | null;
+    favorites: FavoriteProduct[] | null;
+    loading: boolean;
+    error: Error | null;
     toggleFavorite: (productId: string) => Promise<void>;
-    clearFavorite: () => void;
 };
 
 const FavoriteContext = createContext<FavoriteContextType>({
     favorites: null,
     toggleFavorite: async () => {},
-    clearFavorite: () => {},
+    loading: true,
+    error: null,
 });
 
 export default FavoriteContext;

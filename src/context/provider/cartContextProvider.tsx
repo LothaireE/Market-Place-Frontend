@@ -1,13 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 // import { API_URLS } from "../config/env";
-import CartContext from "./cartContext";
+import CartContext from "../cartContext";
 // import type { Product } from "../library/graphql/queries/products";
-import type { Product } from "../types/product.type";
-
-type CartItem = {
-    productId: string;
-    quantity: number;
-};
+// import type { Product } from "../types/product.type";
+import type { CartItem, CartProduct } from "../../types/cart.type";
 
 const CART = "mp_user_cart";
 
@@ -29,28 +25,23 @@ export default function CartContextProvider({
         if (storedCart) setCartItems(JSON.parse(storedCart));
     }, [cartItems]);
 
-    async function addItem(product: Product, quantity: number = 1) {
+    async function addItem(product: CartProduct, quantity: number = 1) {
         setCartItems((prevItems) => {
+            let cart: CartItem[] = [];
             const existingItem = prevItems.find(
-                (item) => item.productId === product.id
+                (item) => item.product.id === product.id
             );
             if (existingItem) {
-                const cart = prevItems.map((item) =>
-                    item.productId === product.id
+                cart = prevItems.map((item) =>
+                    item.product.id === product.id
                         ? { ...item, quantity: item.quantity + quantity }
                         : item
                 );
-                localStorage.setItem(CART, JSON.stringify(cart));
-                return cart;
             } else {
-                const cart = [
-                    ...prevItems,
-                    { productId: product.id, quantity },
-                ];
-                localStorage.setItem(CART, JSON.stringify(cart));
-
-                return cart;
+                cart = [...prevItems, { product, quantity }];
             }
+            localStorage.setItem(CART, JSON.stringify(cart));
+            return cart;
         });
     }
 
@@ -58,7 +49,7 @@ export default function CartContextProvider({
         setCartItems((prevItems) => {
             const cart = prevItems
                 .map((item) =>
-                    item.productId === productId
+                    item.product.id === productId
                         ? { ...item, quantity: item.quantity - 1 }
                         : item
                 )
@@ -73,11 +64,17 @@ export default function CartContextProvider({
         setCartItems([]);
     }
 
+    const totalQuantity = cartItems.reduce(
+        (sum, item) => sum + item.quantity,
+        0
+    );
+
     const contextValue = {
         addItem,
         removeItem,
         clearCart,
         cartItems,
+        totalQuantity,
     };
 
     return (

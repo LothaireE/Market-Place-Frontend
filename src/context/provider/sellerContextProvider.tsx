@@ -1,8 +1,8 @@
 import { useQuery } from "@apollo/client";
-import SellerContext from "./sellerContext";
-import { useAuthContext } from "./useAppContext";
-import type { SellerProfile } from "../types/seller.type";
-import { GET_SELLER_PROFILE } from "../library/graphql/queries/sellerProfile";
+import SellerContext from "../sellerContext";
+import { useAuthContext } from "../useAppContext";
+import type { SellerProfile } from "../../types/seller.type";
+import { GET_SELLER_PROFILE } from "../../library/graphql/queries/sellerProfile";
 
 export default function SellerContextProvider({
     children,

@@ -1,12 +1,11 @@
 import "./App.css";
 import { Container } from "@mui/material";
 import { Outlet } from "react-router";
-import CustomHeader from "./components/navigation/CustomHeader";
-import BottomNav from "./components/navigation/BottomNavigation";
-import AuthContextProvider from "./context/authContextProvider.tsx";
-import CartContextProvider from "./context/cartContextProvider.tsx";
-import FavoriteContextProvider from "./context/favoritesContextProvider.tsx";
-import SellerContextProvider from "./context/sellerContextProvider.tsx";
+import AppHeader from "./components/header/AppHeader.tsx";
+import AuthContextProvider from "./context/provider/authContextProvider.tsx";
+import CartContextProvider from "./context/provider/cartContextProvider.tsx";
+import FavoriteContextProvider from "./context/provider/favoritesContextProvider.tsx";
+import SellerContextProvider from "./context/provider/sellerContextProvider.tsx";
 
 export default function App() {
     return (
@@ -14,11 +13,10 @@ export default function App() {
             <SellerContextProvider>
                 <CartContextProvider>
                     <FavoriteContextProvider>
-                        <CustomHeader />
+                        <AppHeader />
                         <Container>
                             <Outlet />
                         </Container>
-                        <BottomNav />
                     </FavoriteContextProvider>
                 </CartContextProvider>
             </SellerContextProvider>

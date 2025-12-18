@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useParams } from "react-router";
 import { Box, Button, CircularProgress, Container } from "@mui/material";
 import type { ProductCondition, ProductImage } from "../../types/product.type";
-import UpdateProductForm from "../../components/products/UpdateProductForm";
+import UpdateProductForm from "../../components/forms/UpdateProductForm";
 import Toast from "../../components/common/Toast";
 
 type ProductUpdateQueryResponse = {

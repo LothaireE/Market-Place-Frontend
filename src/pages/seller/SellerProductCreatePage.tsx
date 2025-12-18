@@ -1,5 +1,5 @@
 import { useState } from "react";
-import CreateProductForm from "../../components/products/CreateProductForm";
+import CreateProductForm from "../../components/forms/CreateProductForm";
 import Toast from "../../components/common/Toast";
 import type { Product } from "../../types/product.type";
 import { Container } from "@mui/material";

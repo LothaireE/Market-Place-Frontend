@@ -32,7 +32,9 @@ export type AuthContextType = {
     themeMode: ThemeMode;
     toggleTheme: () => void;
     error: string | null;
-    authStatus: string;
+    authStatus: "loading" | "unauthenticated" | "authenticated";
+    isAuthenticated: boolean;
+    avatarLetter: string;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -49,6 +51,8 @@ const AuthContext = createContext<AuthContextType>({
     themeMode: "lightMode",
     error: null,
     authStatus: "loading",
+    isAuthenticated: false,
+    avatarLetter: "?",
 });
 
 export default AuthContext;

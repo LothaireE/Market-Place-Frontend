@@ -1,17 +1,12 @@
 import { createContext } from "react";
-import type { Product } from "../types/product.type";
-export type ThemeMode = "lightMode" | "darkMode";
-
-type CartItem = {
-    productId: string;
-    quantity: number;
-};
+import type { CartProduct, CartItem } from "../types/cart.type";
 
 export type CartContextType = {
-    addItem: (product: Product, quantity?: number) => Promise<void>; // maybe jai pas besoin d'envoyer tout le product mais juste l'id
+    addItem: (product: CartProduct, quantity?: number) => Promise<void>;
     removeItem: (productId: string) => Promise<void>;
     clearCart: () => Promise<void>;
     cartItems: CartItem[];
+    totalQuantity: number;
 };
 
 const CartContext = createContext<CartContextType>({
@@ -19,6 +14,7 @@ const CartContext = createContext<CartContextType>({
     removeItem: async () => {},
     clearCart: async () => {},
     cartItems: [],
+    totalQuantity: 0,
 });
 
 export default CartContext;

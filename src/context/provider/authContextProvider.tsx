@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { API_URLS } from "../config/env";
-import AuthContext, { type ThemeMode } from "./authContext";
+import { API_URLS } from "../../config/env";
+import AuthContext, { type ThemeMode } from "../authContext";
 import { ThemeProvider, createTheme } from "@mui/material";
-import { appTheme, appThemeDark } from "../theme/appTheme";
-import { AUTH_ACCESS_TOKEN } from "../library/graphql/client";
+import { appTheme, appThemeDark } from "../../theme/appTheme";
+import { AUTH_ACCESS_TOKEN } from "../../library/graphql/client";
 
 // import { AUTH_ACCESS_TOKEN, setApolloAuthTokenGetter } from "../library/graphql/client";
 
@@ -145,6 +145,13 @@ export default function AuthContextProvider({
         }
     }
 
+    const isAuthenticated = authStatus === "authenticated";
+
+    const avatarLetter =
+        user?.username?.charAt(0).toUpperCase() ||
+        user?.email?.charAt(0).toUpperCase() ||
+        "?";
+
     const contextValue = {
         accessToken,
         user,
@@ -156,6 +163,8 @@ export default function AuthContextProvider({
         themeMode,
         error,
         authStatus,
+        isAuthenticated,
+        avatarLetter,
     };
     return (
         <AuthContext.Provider value={contextValue}>
