@@ -479,10 +479,7 @@ const UpdateProductForm = ({
 
                         {/* new images select */}
                         <Box>
-                            <CustomAccordion
-                                isDisabled={isReadOnly}
-                                open={!isReadOnly}
-                            >
+                            <CustomAccordion open={!isReadOnly}>
                                 <Box
                                     sx={{
                                         display: "flex",

@@ -56,14 +56,16 @@ const HeroBanner = () => {
                         fullWidth
                         placeholder="Search for an instrument, brand, or setup..."
                         sx={{ mb: 2, bgcolor: "background.paper" }}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton edge="end">
-                                        <SearchIcon />
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton edge="end">
+                                            <SearchIcon />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            },
                         }}
                     />
 
@@ -75,7 +77,7 @@ const HeroBanner = () => {
                             sx={{ borderRadius: 999 }}
                             to={"products/"}
                         >
-                            Browse listings
+                            Browse gear
                         </RouterLinkButton>
                         {sellerProfile && (
                             <RouterLinkButton
@@ -83,7 +85,8 @@ const HeroBanner = () => {
                                 size="large"
                                 startIcon={<AddCircleOutlineIcon />}
                                 sx={{ borderRadius: 999 }}
-                                to={"seller/products/new"}
+                                // to={"seller/products/new"}
+                                to={"seller/new"}
                             >
                                 Post a listing
                             </RouterLinkButton>

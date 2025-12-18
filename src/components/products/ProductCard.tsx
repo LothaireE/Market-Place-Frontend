@@ -10,14 +10,24 @@ import {
     IconButton,
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useNavigate } from "react-router";
-import { useFavoritesContext } from "../../context/useAppContext";
+import {
+    useAuthContext,
+    useFavoritesContext,
+} from "../../context/useAppContext";
 
 const ProductCard = (product: Product) => {
-    const { favorites, toggleFavorite } = useFavoritesContext();
     const navigate = useNavigate();
+    const { isAuthenticated } = useAuthContext();
+    const { favorites, toggleFavorite } = useFavoritesContext();
 
-    const isFav = favorites?.includes(product.id);
+    const isFav = favorites?.some((fav) => fav.product.id === product.id);
+
+    const handleToggleFavorite = () => {
+        if (!isAuthenticated) return;
+        toggleFavorite(product.id);
+    };
 
     return (
         <Card
@@ -27,6 +37,13 @@ const ProductCard = (product: Product) => {
                 flexDirection: "column",
                 borderRadius: 3,
                 overflow: "hidden",
+                boxShadow: "none",
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: (theme) => theme.shadows[2],
+                },
             }}
         >
             <Box sx={{ position: "relative" }}>
@@ -35,25 +52,45 @@ const ProductCard = (product: Product) => {
                     height="220"
                     image={product?.images[0]?.url}
                     alt={product.name}
+                    sx={{
+                        objectFit: "cover",
+                        bgcolor: "grey.100",
+                    }}
                 />
+
                 <IconButton
+                    disabled={!isAuthenticated}
                     sx={{
                         position: "absolute",
                         top: 8,
                         right: 8,
-                        bgcolor: !isFav
-                            ? "rgba(255,255,255,0.9)"
-                            : "rgba(255, 155, 155, 0.9)",
-                        // bgcolor: isFav ? "rgba(255,255,255,0.9)" : "primary",
-                        "&:hover": { bgcolor: "common.white" },
+                        bgcolor: "rgba(255,255,255,0.9)",
+                        borderRadius: "999px",
+                        boxShadow: (theme) => theme.shadows[1],
+                        "&:hover": {
+                            bgcolor: "common.white",
+                        },
+                        "&.Mui-disabled": {
+                            bgcolor: "rgba(255,255,255,0.6)",
+                        },
                     }}
                     size="small"
-                    onClick={() => {
-                        console.log("add to fav");
-                        toggleFavorite(product.id);
-                    }}
+                    onClick={handleToggleFavorite}
+                    aria-label={
+                        isFav ? "Remove from favorites" : "Add to favorites"
+                    }
                 >
-                    <FavoriteBorderIcon fontSize="small" />
+                    {isFav ? (
+                        <FavoriteIcon
+                            fontSize="small"
+                            color="error" // rouge primaire
+                        />
+                    ) : (
+                        <FavoriteBorderIcon
+                            fontSize="small"
+                            sx={{ color: (theme) => theme.palette.grey[500] }}
+                        />
+                    )}
                 </IconButton>
             </Box>
 
@@ -66,12 +103,13 @@ const ProductCard = (product: Product) => {
                 >
                     {product.name}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    {/* {product.brand} • size {product.size} */}
-                    brand • size {product.size}
+
+                <Typography variant="body2" color="text.secondary" noWrap>
+                    Brand (TODO) • size {product.size}
                 </Typography>
+
                 <Typography variant="subtitle1" fontWeight={700} sx={{ mt: 1 }}>
-                    {product.price}
+                    {product.price} €
                 </Typography>
             </CardContent>
 
@@ -80,7 +118,10 @@ const ProductCard = (product: Product) => {
                     fullWidth
                     variant="outlined"
                     size="small"
-                    sx={{ borderRadius: 999 }}
+                    sx={{
+                        borderRadius: 999,
+                        textTransform: "none",
+                    }}
                     onClick={() => navigate(`/product-details/${product.id}`)}
                 >
                     See more

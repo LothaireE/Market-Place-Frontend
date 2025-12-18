@@ -19,12 +19,13 @@ const PriceInput = ({
             onValueChange={(value) => value && handleSetPrice(value)}
             id="price-input"
             style={{
-                // width: "100%",
                 maxWidth: "10rem",
                 display: "flex",
                 alignItems: "center",
                 padding: "8px 0 2px",
-                borderBottom: "1px solid 'text.primary'",
+                borderBottom: isDisabled
+                    ? "2px solid #5C5C5C"
+                    : "2px solid #2B4C7E",
             }}
         >
             <NumberField.Input

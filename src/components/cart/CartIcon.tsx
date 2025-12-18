@@ -3,12 +3,11 @@ import ShoppingBasketIcon from "@mui/icons-material/ShoppingBasket";
 
 const CartIcon = ({
     handleClick,
-    itemsCount,
+    count = 0,
 }: {
     handleClick: () => void;
-    itemsCount: number | null;
+    count: number;
 }) => {
-    const count = itemsCount ?? 0;
     return (
         <IconButton
             sx={{
@@ -27,7 +26,7 @@ const CartIcon = ({
             <Box
                 sx={{
                     position: "absolute",
-                    top: -4,
+                    top: { xs: 0, md: -4 },
                     right: -4,
                     minWidth: 18,
                     height: 18,
