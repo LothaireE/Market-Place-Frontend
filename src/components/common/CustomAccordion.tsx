@@ -6,10 +6,7 @@ type AccordionProps = {
     open?: boolean;
 };
 
-const CustomAccordion: React.FC<AccordionProps> = ({
-    children,
-    open: openProp,
-}) => {
+const CustomAccordion = ({ children, open: openProp }: AccordionProps) => {
     const open = openProp;
 
     const [maxHeight, setMaxHeight] = useState(0);

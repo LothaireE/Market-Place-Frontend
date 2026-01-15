@@ -8,10 +8,17 @@ export const GET_PRODUCTS = gql`
                 name
                 sellerProfile {
                     user {
-                        #   id
                         username
-                        email
                     }
+                }
+                images {
+                    publicId
+                    url
+                    width
+                    height
+                    bytes
+                    format
+                    name
                 }
             }
             totalPages
@@ -55,9 +62,11 @@ export const GET_PRODUCTS_HOMEPAGE = gql`
             items {
                 name
                 id
-                price
-                description
+                categories {
+                    name
+                }
                 condition
+                createdAt
                 images {
                     bytes
                     format
@@ -67,6 +76,7 @@ export const GET_PRODUCTS_HOMEPAGE = gql`
                     url
                     width
                 }
+                price
                 sellerProfile {
                     user {
                         username
@@ -96,6 +106,80 @@ export const GET_SELLER_PRODUCTS = gql`
             price
             size
             updatedAt
+        }
+    }
+`;
+
+// export const SEARCH_PRODUCT_BY_NAME = gql`
+export const SEARCH_PRODUCT_BY_NAME = gql`
+    # and descriptio too
+    query Products($pagination: PaginationInput!, $filter: ProductFilterInput) {
+        products(pagination: $pagination, filter: $filter) {
+            items {
+                id
+                name
+                categories {
+                    name
+                }
+                condition
+                createdAt
+                images {
+                    url
+                    bytes
+                    publicId
+                    height
+                    width
+                    format
+                    name
+                }
+                price
+                sellerProfile {
+                    user {
+                        id
+                        username
+                        email
+                    }
+                }
+            }
+            totalPages
+            totalProducts
+            currentPage
+        }
+    }
+`;
+
+export const GET_PRODUCTS_LIST_PAGE = gql`
+    query Products($filter: ProductFilterInput, $pagination: PaginationInput) {
+        products(filter: $filter, pagination: $pagination) {
+            items {
+                id
+                name
+                categories {
+                    name
+                }
+                condition
+                createdAt
+                images {
+                    url
+                    bytes
+                    publicId
+                    height
+                    width
+                    format
+                    name
+                }
+                price
+                sellerProfile {
+                    user {
+                        id
+                        username
+                        email
+                    }
+                }
+            }
+            totalPages
+            totalProducts
+            currentPage
         }
     }
 `;

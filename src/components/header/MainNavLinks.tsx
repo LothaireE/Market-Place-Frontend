@@ -8,6 +8,10 @@ export type MainNavLinkItem = {
 };
 
 export const MAIN_NAV_LINKS = [
-    { label: "Browse gear", to: "/", icon: <HomeIcon fontSize="small" /> },
+    {
+        label: "Browse gear",
+        to: "/products",
+        icon: <HomeIcon fontSize="small" />,
+    },
     { label: "About", to: "/about", icon: <InfoIcon fontSize="small" /> },
 ];

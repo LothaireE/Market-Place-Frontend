@@ -24,7 +24,6 @@ export function useApi() {
 
             if (token) headers.set("Authorization", `Bearer ${token}`);
 
-            console.log({ init });
             const response = await fetch(input, {
                 ...init,
                 headers,

@@ -90,7 +90,7 @@ const SellerDashboardPage = () => {
     });
 
     const handleCreateListing = () => {
-        navigate("/seller/products/create");
+        navigate("/seller/products/new");
     };
 
     const handleViewProducts = () => {
@@ -142,12 +142,9 @@ const SellerDashboardPage = () => {
                     gap: 2,
                 }}
             >
-                <Box>
+                <Box sx={{ display: { xs: "none", md: "block" } }}>
                     <Typography variant="h4" fontWeight={700} gutterBottom>
-                        {sellerProfile
-                            ? ` ${username} dashboard`
-                            : "Seller dashboard"}
-                        {/* Seller dashboard */}
+                        Dashboard
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                         {sellerProfile
@@ -242,60 +239,64 @@ const SellerDashboardPage = () => {
 
                         {data.length === 0 ? (
                             <Typography variant="body2" color="text.secondary">
-                                You don&apos;t have any listings yet. Start by
+                                You do not have any listings yet. Start by
                                 adding your first instrument.
                             </Typography>
                         ) : (
                             <List dense disablePadding>
-                                {data.sellerProducts.map((product: Product) => {
-                                    const viewsCount = Math.floor(
-                                        Math.random() * 100
-                                    );
-                                    return (
-                                        <ListItem
-                                            key={product.id}
-                                            sx={{
-                                                borderRadius: 2,
-                                                mb: 1,
-                                                px: 1.5,
-                                                "&:hover": {
-                                                    bgcolor: "action.hover",
-                                                    cursor: "pointer",
-                                                },
-                                            }}
-                                            onClick={() =>
-                                                navigate(
-                                                    `/product-details/${product.id}`
-                                                )
-                                            }
-                                            secondaryAction={
-                                                <ListingViews
-                                                    viewsCount={viewsCount}
-                                                />
-                                            }
-                                        >
-                                            <ListItemText
-                                                disableTypography
-                                                primary={
-                                                    <Typography
-                                                        variant="body1"
-                                                        fontWeight={500}
-                                                        noWrap
-                                                    >
-                                                        {product.name}
-                                                    </Typography>
+                                {data.sellerProducts
+                                    .slice(0, 5)
+                                    .map((product: Product) => {
+                                        const viewsCount = Math.floor(
+                                            Math.random() * 100
+                                        );
+                                        return (
+                                            <ListItem
+                                                key={product.id}
+                                                sx={{
+                                                    borderRadius: 2,
+                                                    mb: 1,
+                                                    px: 1.5,
+                                                    "&:hover": {
+                                                        bgcolor: "action.hover",
+                                                        cursor: "pointer",
+                                                    },
+                                                }}
+                                                onClick={() =>
+                                                    navigate(
+                                                        `/products/${product.id}`
+                                                    )
                                                 }
-                                                secondary={
-                                                    <ListingPriceDetails
-                                                        price={product.price}
-                                                        status="Pending"
-                                                        // status={product.status}
+                                                secondaryAction={
+                                                    <ListingViews
+                                                        viewsCount={viewsCount}
                                                     />
                                                 }
-                                            />
-                                        </ListItem>
-                                    );
-                                })}
+                                            >
+                                                <ListItemText
+                                                    disableTypography
+                                                    primary={
+                                                        <Typography
+                                                            variant="body1"
+                                                            fontWeight={500}
+                                                            noWrap
+                                                        >
+                                                            {product.name}
+                                                        </Typography>
+                                                    }
+                                                    secondary={
+                                                        <ListingPriceDetails
+                                                            price={
+                                                                product.price
+                                                            }
+                                                            status="Pending"
+                                                            // status={product.status}
+                                                        />
+                                                    }
+                                                />
+                                            </ListItem>
+                                        );
+                                    })}
                             </List>
                         )}
                     </Paper>
@@ -364,7 +365,7 @@ const SellerDashboardPage = () => {
                             <br />
                             • Be honest about cosmetic wear and technical
                             issues.
-                            <br />• Respond quickly to buyers&apos; questions.
+                            <br />• Respond quickly to potential buyers.
                         </Typography>
                     </Paper>
                 </Grid>

@@ -205,7 +205,7 @@ const UpdateProductForm = ({
             onSuccess?.(data ?? null);
 
             setTimeout(() => {
-                navigate(`/product-details/${product.id}`);
+                navigate(`/products/${product.id}`);
             }, 1500);
         } catch (err) {
             if (err instanceof Error) {

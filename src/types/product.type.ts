@@ -30,23 +30,22 @@ export type Product = {
     sellerProfile: SellerProfile;
     size?: string;
     updatedAt?: string;
+    categories?: [Category];
 };
 
 export type FavoriteProduct = {
-    product: {
-        id: string;
-        name: string;
-        price: number;
-        condition: ProductCondition;
-        sellerProfile: {
-            user: {
-                username: string;
-            };
+    id: string;
+    name: string;
+    price: number;
+    condition: ProductCondition;
+    sellerProfile: {
+        user: {
+            username: string;
         };
-        images: ProductImage[];
-        sellerId: string;
-        createdAt: string;
     };
+    images: ProductImage[];
+    sellerId: string;
+    createdAt: string;
 };
 
 export type Category = {

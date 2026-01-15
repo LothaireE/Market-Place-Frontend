@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     AppBar,
     Box,
@@ -20,6 +20,19 @@ import HeaderDesktopSearch from "./search/HeaderDesktopSearch";
 
 import HeaderUserSection from "./HeaderUserSection";
 import { MAIN_NAV_LINKS } from "./MainNavLinks";
+import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
+import { useLazyQuery } from "@apollo/client";
+import type { Product } from "../../types/product.type";
+import { SEARCH_PRODUCT_BY_NAME } from "../../library/graphql/queries/products";
+import { useOutsideClick } from "../../hooks/useOutsideClick";
+import SearchDropDownSelector from "./search/SearchDropDownSelector";
+
+type LoadProductByNameType = {
+    products: { items: Product[] };
+    totalPages: number;
+    totalProducts: number;
+    currentPage: number;
+};
 
 const mainNavLinks = MAIN_NAV_LINKS;
 
@@ -27,8 +40,33 @@ const AppHeader = () => {
     const { isAuthenticated } = useAuthContext();
     const navigate = useNavigate();
 
+    const wrapperRef = useRef<HTMLDivElement | null>(null);
+    const searchbarClick = useOutsideClick(wrapperRef);
+
+    const mobileWrapperRef = useRef<HTMLDivElement | null>(null);
+    const mobileSearchbarClick = useOutsideClick(mobileWrapperRef);
+
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [search, setSearch] = useState("");
+    const [searchInputValue, setSearchInputValue] = useState("");
+    const [searchResult, setSearchResult] = useState<Product[]>([]);
+
+    const pagination = {
+        page: null,
+        pageSize: null,
+        sortBy: "DATE",
+        sortDirection: "DESC",
+    };
+    //TODO: rewrite all the other useLazyQuery
+    //  no more onCompleted, uef now
+    // https://github.com/apollographql/apollo-client/issues/12352
+    const [loadProductByName, { data: searchData }] =
+        useLazyQuery<LoadProductByNameType>(SEARCH_PRODUCT_BY_NAME);
+
+    useEffect(() => {
+        if (searchData?.products?.items) {
+            setSearchResult(searchData.products.items);
+        }
+    }, [searchData]);
 
     const handleToggleMobileDrawer = (
         value: "open" | "close" | "toggle" = "toggle"
@@ -41,8 +79,24 @@ const AppHeader = () => {
 
     const handleSearchSubmit = (event: React.FormEvent) => {
         event.preventDefault();
-        // TODO
-        // navigate(`/?q=${encodeURIComponent(search.trim())}`);
+        console.log(searchResult);
+        navigate(`/products/?search=${searchInputValue}`);
+        // TODO: handle refresh once on page, search stays the same
+    };
+
+    useDebouncedSearch(searchInputValue, 500, async (search: string) => {
+        await loadProductByName({
+            variables: {
+                pagination,
+                filter: { search },
+            },
+        });
+    });
+
+    const handleSelect = (id: string) => {
+        navigate(`/products/${id}`);
+        setSearchInputValue("");
+        setSearchResult([]);
     };
 
     return (
@@ -86,16 +140,23 @@ const AppHeader = () => {
                             </Box>
                             {/* Search desktop */}
                             <Box
+                                ref={wrapperRef}
                                 mx="auto"
                                 sx={{
                                     flexGrow: 2,
                                     display: { xs: "none", md: "block" },
+                                    position: "relative",
                                 }}
                             >
                                 <HeaderDesktopSearch
-                                    value={search}
-                                    onChange={setSearch}
+                                    value={searchInputValue}
+                                    onChange={setSearchInputValue}
                                     onSubmit={handleSearchSubmit}
+                                />
+                                <SearchDropDownSelector
+                                    open={searchbarClick === "inside"}
+                                    items={searchResult}
+                                    handleOnClick={handleSelect}
                                 />
                             </Box>
 
@@ -147,13 +208,22 @@ const AppHeader = () => {
                         </Box>
                         <Box
                             pb={1}
-                            sx={{ display: { xs: "block", md: "none" } }}
+                            sx={{
+                                display: { xs: "block", md: "none" },
+                                position: "relative",
+                            }}
+                            ref={mobileWrapperRef}
                         >
                             <Divider sx={{ mb: 2 }} />
                             <HeaderMobileSearch
-                                value={search}
-                                onChange={setSearch}
+                                value={searchInputValue}
+                                onChange={setSearchInputValue}
                                 onSubmit={handleSearchSubmit}
+                            />
+                            <SearchDropDownSelector
+                                open={mobileSearchbarClick === "inside"}
+                                items={searchResult}
+                                handleOnClick={handleSelect}
                             />
                         </Box>
                     </Toolbar>

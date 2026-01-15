@@ -1,10 +1,17 @@
 import { useQuery, gql } from "@apollo/client";
 import { useState } from "react";
 import { useParams } from "react-router";
-import { Box, Button, CircularProgress, Container } from "@mui/material";
+import {
+    Box,
+    CircularProgress,
+    Container,
+    FormControlLabel,
+    Switch,
+} from "@mui/material";
 import type { ProductCondition, ProductImage } from "../../types/product.type";
 import UpdateProductForm from "../../components/forms/UpdateProductForm";
 import Toast from "../../components/common/Toast";
+import { capitalizeFirstLetter } from "../../utils/textFormat";
 
 type ProductUpdateQueryResponse = {
     product: {
@@ -66,6 +73,7 @@ const SellerProductEditPage = () => {
             `Product "${data?.product.name}" updated successfully!`
         );
     };
+
     if (error) return <p>Error loading product: {error.message}</p>;
     if (!data?.product) return <p>Product not found</p>;
     const toggleEditStatus = () => {
@@ -91,9 +99,18 @@ const SellerProductEditPage = () => {
             )}
 
             {!data?.product && <p>Product not found</p>}
-            <Button onClick={toggleEditStatus}>
-                toggle edit: {editStatus}
-            </Button>
+
+            <FormControlLabel
+                control={
+                    <Switch
+                        checked={editStatus === "edit"}
+                        onChange={toggleEditStatus}
+                        color="primary"
+                    />
+                }
+                label={capitalizeFirstLetter(editStatus)}
+                sx={{ mb: 2 }}
+            />
             <Toast
                 onOpen={openToast}
                 onClose={() => setOpenToast(false)}

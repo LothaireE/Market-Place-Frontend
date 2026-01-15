@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
+import { useRef, useEffect } from "react";
 
 export function useDebouncedSearch<T>(
     value: string,
     delay: number,
     searchFn: (search: string) => Promise<T | void>
 ) {
-    const [debouncedValue, setDebouncedValue] = useState(value);
+    const lastValueRef = useRef<string>("");
 
     useEffect(() => {
+        if (value === lastValueRef.current) return;
+
         const handler = setTimeout(() => {
             if (value.length > 2) {
-                setDebouncedValue(value);
+                lastValueRef.current = value;
                 searchFn(value);
             }
         }, delay);
@@ -18,6 +20,4 @@ export function useDebouncedSearch<T>(
             clearTimeout(handler);
         };
     }, [value, delay, searchFn]);
-
-    return debouncedValue;
 }

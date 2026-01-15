@@ -1,19 +1,18 @@
-import { useQuery, gql } from "@apollo/client";
+import { useQuery } from "@apollo/client";
 import type { Category } from "../../types/product.type";
 import { Box, Chip, Container, Skeleton, Typography } from "@mui/material";
+import { GET_CATEGORIES } from "../../library/graphql/queries/categories";
+import { useNavigate } from "react-router";
 
-const GET_CATEGORIES = gql`
-    query Categories {
-        categories {
-            name
-            id
-        }
-    }
-`;
 const CategoryStrip = () => {
+    const navigate = useNavigate();
     const { loading, error, data } = useQuery<{ categories: Category[] }>(
         GET_CATEGORIES
     );
+
+    const handleCategoryClick = (catId: string) => {
+        navigate(`/products/?category=${catId}`);
+    };
 
     return (
         <Box
@@ -40,6 +39,7 @@ const CategoryStrip = () => {
                             borderRadius: 999,
                             fontWeight: 500,
                         }}
+                        onClick={() => handleCategoryClick(cat.id)}
                     />
                 ))}
                 {loading &&

@@ -181,7 +181,7 @@ const SellerProductListPage = () => {
     };
 
     const handleNewProduct = () => {
-        navigate("/seller/products/create");
+        navigate("/seller/products/new");
     };
 
     const handleSortBy = (event: React.ChangeEvent<HTMLInputElement>) => {

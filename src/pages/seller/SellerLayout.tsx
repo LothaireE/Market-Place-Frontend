@@ -18,7 +18,11 @@ import MusicNoteIcon from "@mui/icons-material/MusicNote";
 
 const SellerLayout = () => {
     return (
-        <Stack direction="row" spacing={3} sx={{ p: { xs: 2, md: 3 } }}>
+        <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={{ xs: 2, md: 3 }}
+            sx={{ p: { xs: 2, md: 3 } }}
+        >
             {/* Sidebar */}
             <Paper
                 elevation={2}
@@ -26,16 +30,16 @@ const SellerLayout = () => {
                     width: 260,
                     p: 2.5,
                     borderRadius: 3,
-                    alignSelf: "flex-start",
-                    position: "sticky",
-                    top: 80,
+                    alignSelf: { xs: "stretch", md: "flex-start" },
+                    position: { xs: "relative", md: "sticky" },
+                    top: { md: 80 },
                     display: "flex",
                     flexDirection: "column",
                     gap: 2,
                 }}
             >
                 {/* Header */}
-                <Box>
+                <Box sx={{ display: { xs: "none", md: "block" } }}>
                     <Stack direction="row" spacing={1} alignItems="center">
                         <MusicNoteIcon color="primary" />
                         <Typography variant="h6" fontWeight={600}>
@@ -51,7 +55,7 @@ const SellerLayout = () => {
                     </Typography>
                 </Box>
 
-                <Divider />
+                <Divider sx={{ display: { xs: "none", md: "block" } }} />
 
                 <List component="nav" disablePadding>
                     <ListItemButton
@@ -91,7 +95,7 @@ const SellerLayout = () => {
 
                     <ListItemButton
                         component={NavLink}
-                        to="/seller/products/new"
+                        to="/seller/new"
                         sx={{
                             borderRadius: 2,
                             mb: 0.5,
@@ -133,36 +137,3 @@ const SellerLayout = () => {
 };
 
 export default SellerLayout;
-
-// import { Outlet, NavLink } from "react-router";
-// import { Box, Stack, Typography } from "@mui/material";
-
-// const SellerLayout = () => {
-//     return (
-//         <Stack direction="row" spacing={2} sx={{ p: 3 }}>
-//             {/* seller sidebar */}
-//             <Box
-//                 sx={{
-//                     width: "220px",
-//                     display: "flex",
-//                     flexDirection: "column",
-//                     gap: 2,
-//                 }}
-//             >
-//                 <Typography variant="h6">Seller Panel</Typography>
-//                 <NavLink to="/seller" end>
-//                     Dashboard
-//                 </NavLink>
-//                 <NavLink to="/seller/products">My Products</NavLink>
-//                 <NavLink to="/seller/products/new">Add Product</NavLink>
-//                 <NavLink to="/seller/profile">Profile</NavLink>
-//             </Box>
-//             {/* seller pages content */}
-//             <Box sx={{ flexGrow: 1 }}>
-//                 <Outlet />
-//             </Box>
-//         </Stack>
-//     );
-// };
-
-// export default SellerLayout;

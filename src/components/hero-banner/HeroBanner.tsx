@@ -3,11 +3,11 @@ import {
     Container,
     Typography,
     Stack,
-    TextField,
-    InputAdornment,
-    IconButton,
+    // TextField,
+    // InputAdornment,
+    // IconButton,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
+// import SearchIcon from "@mui/icons-material/Search";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import InfoChip from "./InfoChip";
@@ -50,8 +50,9 @@ const HeroBanner = () => {
                         securely.
                     </Typography>
 
+                    {/* not sure I want to keep the search bar here now that it's in the header */}
                     {/* Search bar */}
-                    <TextField
+                    {/* <TextField
                         variant="outlined"
                         fullWidth
                         placeholder="Search for an instrument, brand, or setup..."
@@ -67,7 +68,7 @@ const HeroBanner = () => {
                                 ),
                             },
                         }}
-                    />
+                    /> */}
 
                     <Stack direction="row" spacing={2}>
                         <RouterLinkButton
@@ -75,7 +76,7 @@ const HeroBanner = () => {
                             size="large"
                             endIcon={<ArrowForwardIcon />}
                             sx={{ borderRadius: 999 }}
-                            to={"products/"}
+                            to={"products"}
                         >
                             Browse gear
                         </RouterLinkButton>
@@ -141,7 +142,7 @@ const HeroBanner = () => {
                         <Box
                             sx={{
                                 position: "relative",
-                                height: "100%",
+                                height: "95%",
                                 display: "flex",
                                 flexDirection: "column",
                                 justifyContent: "space-between",

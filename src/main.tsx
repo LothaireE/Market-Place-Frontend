@@ -7,7 +7,6 @@ import { graphqlClient } from "./library/graphql/client.ts";
 
 import App from "./App.tsx";
 import HomePage from "./pages/home/HomePage.tsx";
-import Details from "./pages/Details";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import Authenticate from "./pages/auth/Authenticate.tsx";
@@ -25,6 +24,8 @@ import SellerProfilePage from "./pages/seller/SellerProfilePage.tsx";
 import AccountLayout from "./pages/account/AccountLayout.tsx";
 import SellerLayout from "./pages/seller/SellerLayout.tsx";
 import SellerProductEditPage from "./pages/seller/SellerProductEditPage.tsx";
+import ProductListPage from "./pages/products/ProductListPage.tsx";
+import ProductDetailPage from "./pages/products/ProductDetailPage.tsx";
 
 const router = createBrowserRouter([
     {
@@ -32,7 +33,13 @@ const router = createBrowserRouter([
         element: <App />,
         children: [
             { index: true, element: <HomePage /> },
-            { path: "/product-details/:id", element: <Details /> },
+            { path: "/products/:id", element: <ProductDetailPage /> },
+            {
+                path: "/products/:category",
+                element: <ProductListPage />,
+            },
+            { path: "/products", element: <ProductListPage /> },
+
             { path: "/about", element: <About /> },
             { path: "/authenticate", element: <Authenticate /> },
             {

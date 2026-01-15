@@ -1,62 +1,150 @@
-import type { Product } from "../../types/product.type";
+// import type { Product } from "../../../types/product.type";
 import {
     Box,
     Typography,
     Button,
-    Card,
-    CardMedia,
-    CardContent,
-    CardActions,
+    Paper,
+    Stack,
+    Chip,
     IconButton,
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
-import { useNavigate } from "react-router";
+import MusicNoteIcon from "@mui/icons-material/MusicNote";
+import StorefrontIcon from "@mui/icons-material/Storefront";
 import {
     useAuthContext,
     useFavoritesContext,
 } from "../../context/useAppContext";
+import type {
+    Category,
+    ProductCondition,
+    ProductImage,
+} from "../../types/product.type";
+import Toast from "../common/Toast";
+import { useState } from "react";
+import { COMMON_MESSAGES } from "../../constants/messages";
 
-const ProductCard = (product: Product) => {
-    const navigate = useNavigate();
+type ProductCardProps = {
+    product: Product;
+    onClick: () => void;
+    cardClick?: boolean;
+};
+
+type Product = {
+    id: string;
+    name: string;
+    price: number;
+    condition: ProductCondition;
+    categories?: [Category];
+    images: ProductImage[];
+    sellerProfile: {
+        user: { username: string };
+    };
+};
+
+const ProductCard = ({
+    product,
+    onClick,
+    cardClick = true,
+}: ProductCardProps) => {
     const { isAuthenticated } = useAuthContext();
-    const { favorites, toggleFavorite } = useFavoritesContext();
+    const { toggleFavorite, isFavorite } = useFavoritesContext();
+    const isFav = isFavorite(product.id);
 
-    const isFav = favorites?.some((fav) => fav.product.id === product.id);
+    const [openToast, setOpenToast] = useState<boolean>(false);
+    const [toastMessage, setToastMessage] = useState<string>("");
 
-    const handleToggleFavorite = () => {
-        if (!isAuthenticated) return;
-        toggleFavorite(product.id);
+    const imgUrl = product.images?.[0]?.url;
+    const conditionLabel = product.condition
+        ? product.condition.toLowerCase().replace("_", " ")
+        : "used";
+
+    const handleCardClick = () => {
+        if (!cardClick) return;
+        onClick();
     };
 
+    const handleToggleFavorite = (
+        event: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    ) => {
+        event.stopPropagation();
+        if (!isAuthenticated) {
+            return (
+                setOpenToast(true),
+                setToastMessage(COMMON_MESSAGES.REQUIRE_AUTH)
+            );
+        } else {
+            return toggleFavorite(product.id);
+        }
+    };
+
+    // const handleSeeMore = (
+    //     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    // ) => {
+    //     e.stopPropagation();
+    //     onClick();
+    // };
+    // console.log("Render ProductCard:", product);
+
     return (
-        <Card
+        <Paper
+            elevation={1}
             sx={{
+                p: 1.5,
+                borderRadius: 0,
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                borderRadius: 3,
-                overflow: "hidden",
-                boxShadow: "none",
-                border: (theme) => `1px solid ${theme.palette.divider}`,
-                transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                cursor: cardClick ? "pointer" : "default",
                 "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: (theme) => theme.shadows[2],
+                    boxShadow: 4,
                 },
             }}
+            onClick={handleCardClick}
         >
-            <Box sx={{ position: "relative" }}>
-                <CardMedia
-                    component="img"
-                    height="220"
-                    image={product?.images[0]?.url}
-                    alt={product.name}
-                    sx={{
-                        objectFit: "cover",
-                        bgcolor: "grey.100",
-                    }}
-                />
+            <Toast
+                onOpen={openToast}
+                onClose={() => setOpenToast(false)}
+                message={toastMessage}
+                severity="info"
+            />
+            {/* Image + bouton favoris */}
+            <Box
+                sx={{
+                    // borderRadius: 2,
+                    overflow: "hidden",
+                    position: "relative",
+                    mb: 1.5,
+                    bgcolor: "background.default",
+                    aspectRatio: "4 / 3",
+                }}
+            >
+                {imgUrl ? (
+                    <Box
+                        component="img"
+                        src={imgUrl}
+                        alt={product.name}
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                        }}
+                    />
+                ) : (
+                    <Box
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "text.secondary",
+                        }}
+                    >
+                        <MusicNoteIcon />
+                    </Box>
+                )}
 
                 <IconButton
                     disabled={!isAuthenticated}
@@ -81,53 +169,96 @@ const ProductCard = (product: Product) => {
                     }
                 >
                     {isFav ? (
-                        <FavoriteIcon
-                            fontSize="small"
-                            color="error" // rouge primaire
-                        />
+                        <FavoriteIcon fontSize="small" color="error" />
                     ) : (
                         <FavoriteBorderIcon
                             fontSize="small"
-                            sx={{ color: (theme) => theme.palette.grey[500] }}
+                            sx={{
+                                color: (theme) => theme.palette.grey[500],
+                            }}
                         />
                     )}
                 </IconButton>
             </Box>
 
-            <CardContent sx={{ flexGrow: 1 }}>
+            {/* Infos */}
+            <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                 <Typography
-                    variant="subtitle2"
+                    variant="subtitle1"
                     fontWeight={600}
                     noWrap
-                    gutterBottom
+                    sx={{ mb: 0.5 }}
                 >
                     {product.name}
                 </Typography>
-
-                <Typography variant="body2" color="text.secondary" noWrap>
-                    Brand (TODO) • size {product.size}
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    noWrap
+                    sx={{ mb: 1 }}
+                >
+                    Seller: {product.sellerProfile?.user?.username ?? "Unknown"}
                 </Typography>
 
-                <Typography variant="subtitle1" fontWeight={700} sx={{ mt: 1 }}>
-                    {product.price} €
-                </Typography>
-            </CardContent>
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    sx={{ mb: 1 }}
+                >
+                    <Chip
+                        size="small"
+                        // icon={<EuroIcon />}
+                        label={`${product.price} €`}
+                        color="primary"
+                        variant="outlined"
+                    />
+                    {product.condition && (
+                        <Chip
+                            size="small"
+                            label={conditionLabel}
+                            variant="outlined"
+                            sx={{ textTransform: "capitalize" }}
+                        />
+                    )}
+                </Stack>
+            </Box>
 
-            <CardActions sx={{ px: 2, pb: 2 }}>
+            {/* Footer : bouton See more + catégorie */}
+            <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+            >
+                {product?.categories?.map((cat) => {
+                    return (
+                        <Typography
+                            key={cat.id}
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                            }}
+                        >
+                            <StorefrontIcon fontSize="inherit" />
+                            {cat.name}
+                        </Typography>
+                    );
+                })}
+            </Stack>
+
+            {!cardClick && (
                 <Button
-                    fullWidth
-                    variant="outlined"
-                    size="small"
-                    sx={{
-                        borderRadius: 999,
-                        textTransform: "none",
-                    }}
-                    onClick={() => navigate(`/product-details/${product.id}`)}
+                    // sx={{ display: cardClick ? "none" : "block" }}
+                    disabled={cardClick}
+                    onClick={onClick}
                 >
                     See more
                 </Button>
-            </CardActions>
-        </Card>
+            )}
+        </Paper>
     );
 };
 

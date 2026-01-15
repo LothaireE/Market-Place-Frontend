@@ -7,6 +7,7 @@ export type FavoriteContextType = {
     loading: boolean;
     error: Error | null;
     toggleFavorite: (productId: string) => Promise<void>;
+    isFavorite: (productId: string) => boolean;
 };
 
 const FavoriteContext = createContext<FavoriteContextType>({
@@ -14,6 +15,7 @@ const FavoriteContext = createContext<FavoriteContextType>({
     toggleFavorite: async () => {},
     loading: true,
     error: null,
+    isFavorite: () => false,
 });
 
 export default FavoriteContext;

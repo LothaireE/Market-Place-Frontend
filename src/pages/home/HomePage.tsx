@@ -1,19 +1,27 @@
 import { useQuery } from "@apollo/client";
-import { GET_PRODUCTS_HOMEPAGE } from "../../library/graphql/queries/products";
+import { GET_PRODUCTS } from "../../library/graphql/queries/products";
 import type { Product } from "../../types/product.type";
-import { Box, Container, Typography, Button, Grid, Stack } from "@mui/material";
+import {
+    Box,
+    Container,
+    Typography,
+    Button,
+    Grid,
+    Stack,
+    CircularProgress,
+} from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import HeroBanner from "../../components/hero-banner/HeroBanner";
 import SellSection from "../../components/common/SellSection";
-import ProductCard from "../../components/products/ProductCard";
 import CategoryStrip from "../../components/products/CategoryStrip";
 import { useNavigate } from "react-router";
+import ProductCard from "../../components/products/ProductCard";
 
 const pagination = {
     page: null,
-    pageSize: null,
-    sortBy: null,
-    sortDirection: null,
+    pageSize: 8, // null,
+    sortBy: "DATE",
+    sortDirection: "DESC",
 };
 
 export type ProductsQueryResponse = {
@@ -26,12 +34,18 @@ export type ProductsQueryResponse = {
 };
 
 const HomePage = () => {
-    const { loading, error, data } = useQuery<ProductsQueryResponse>(
-        GET_PRODUCTS_HOMEPAGE,
-        { variables: { pagination } }
-    );
     const navigate = useNavigate();
-    console.log({ loading, error, data });
+
+    const { loading, error, data } = useQuery<ProductsQueryResponse>(
+        GET_PRODUCTS,
+        {
+            variables: { pagination },
+        }
+    );
+
+    const goToDetails = (id: string) => {
+        navigate(`/products/${id}`);
+    };
 
     return (
         <Box>
@@ -42,7 +56,7 @@ const HomePage = () => {
             <CategoryStrip />
 
             {/*  products */}
-            <Container maxWidth="lg">
+            <Container maxWidth="lg" sx={{ py: 1 }}>
                 <SectionHeader
                     title="Latest finds"
                     subtitle="Discover the newest items posted"
@@ -52,13 +66,58 @@ const HomePage = () => {
                     }}
                 />
 
-                <Grid container spacing={3} py={1}>
-                    {data?.products.items.map((product) => (
-                        <Grid size={{ xs: 6, md: 3 }} key={product.id}>
-                            <ProductCard {...product} />
-                        </Grid>
-                    ))}
+                <Grid container spacing={2} py={1} marginBottom={0}>
+                    {data?.products.items.map((product) => {
+                        console.log("product dans home page ", product);
+                        return (
+                            <Grid
+                                marginBottom={2}
+                                size={{ xs: 6, md: 3 }}
+                                key={product.id}
+                            >
+                                <ProductCard
+                                    product={{ ...product }}
+                                    onClick={() => goToDetails(product.id)}
+                                />
+                            </Grid>
+                        );
+                    })}
                 </Grid>
+                {loading && (
+                    <Box
+                        sx={{
+                            minHeight: "60vh",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <CircularProgress />
+                    </Box>
+                )}
+
+                {error && (
+                    <Box
+                        sx={{
+                            minHeight: "60vh",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <Typography
+                            variant="h5"
+                            color="textPrimary"
+                            gutterBottom
+                        >
+                            Something went wrong.
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                            Please refresh the page or try again later.
+                        </Typography>
+                    </Box>
+                )}
             </Container>
 
             <SellSection />
