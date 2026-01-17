@@ -56,7 +56,7 @@ export default function FavoriteContextProvider({
     async function toggleFavorite(productId: string) {
         if (!isAuthenticated) return;
 
-        const exists = favorites.some((fav) => fav.id === productId);
+        const exists = favorites.some((fav) => fav.product.id === productId);
 
         if (exists) {
             await removeFromFavorite(productId);
@@ -66,7 +66,7 @@ export default function FavoriteContextProvider({
     }
 
     const isFavorite = (productId: string) =>
-        favorites.some((fav) => fav.id === productId);
+        favorites.some((fav) => fav.product.id === productId);
 
     const contextValue = {
         favorites,

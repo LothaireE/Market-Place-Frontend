@@ -34,18 +34,20 @@ export type Product = {
 };
 
 export type FavoriteProduct = {
-    id: string;
-    name: string;
-    price: number;
-    condition: ProductCondition;
-    sellerProfile: {
-        user: {
-            username: string;
+    product: {
+        id: string;
+        name: string;
+        price: number;
+        condition: ProductCondition;
+        sellerProfile: {
+            user: {
+                username: string;
+            };
         };
+        images: ProductImage[];
+        sellerId: string;
+        createdAt: string;
     };
-    images: ProductImage[];
-    sellerId: string;
-    createdAt: string;
 };
 
 export type Category = {
