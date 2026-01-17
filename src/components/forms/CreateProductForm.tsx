@@ -12,16 +12,22 @@ import {
     InputLabel,
     Divider,
     Paper,
+    Chip,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ClearIcon from "@mui/icons-material/Clear";
 import { capitalizeFirstLetter } from "../../utils/textFormat";
 import { API_URLS } from "../../config/env";
 import { useApi } from "../../hooks/useApi";
 import { useNavigate } from "react-router";
-import type { Product, ProductCondition } from "../../types/product.type";
+import type {
+    Category,
+    Product,
+    ProductCondition,
+} from "../../types/product.type";
 import PriceInput from "../common/PriceInput";
 
 type NewImage = {
@@ -51,9 +57,13 @@ const conditions: ProductCondition[] = [
 
 type CreateProductFormProps = {
     onSuccess?: (data: { product: Product }) => void;
+    registeredCategories?: { id: string; name: string }[];
 };
 
-const CreateProductForm = ({ onSuccess }: CreateProductFormProps) => {
+const CreateProductForm = ({
+    onSuccess,
+    registeredCategories,
+}: CreateProductFormProps) => {
     const { fetchWithAuth } = useApi();
     const navigate = useNavigate();
 
@@ -65,8 +75,13 @@ const CreateProductForm = ({ onSuccess }: CreateProductFormProps) => {
     );
     const [brand, setBrand] = useState("Fender"); // stored in `size` field
     const [model, setModel] = useState("Stratocaster"); // stored in `color` field
+
     const [accept, setAccept] = useState(true);
     const [newImages, setNewImages] = useState<NewImage[]>([]);
+    const [selectedCategories, setSelectedCategories] = useState<Category[]>(
+        []
+    );
+    const [categorySelectValue, setCategorySelectValue] = useState("");
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -84,6 +99,31 @@ const CreateProductForm = ({ onSuccess }: CreateProductFormProps) => {
     ) => {
         const value = event.target.value as ProductCondition;
         setCondition(value);
+    };
+
+    const handleCategorySelect = (
+        event: React.ChangeEvent<HTMLSelectElement>
+    ) => {
+        const value = event.target.value;
+
+        if (!value) return;
+
+        if (value === "clear" && selectedCategories.length)
+            setSelectedCategories([]);
+
+        const alreadySelected = selectedCategories.some(
+            (cat) => cat.id === value
+        );
+        if (alreadySelected) return;
+
+        const category = registeredCategories?.find((cat) => cat.id === value);
+        if (category) {
+            setSelectedCategories((prev) => [...prev, category]);
+        }
+    };
+
+    const handleRemoveCategory = (catId: string) => {
+        setSelectedCategories((prev) => prev.filter((cat) => cat.id !== catId));
     };
 
     const handleAddNewImages = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,12 +167,16 @@ const CreateProductForm = ({ onSuccess }: CreateProductFormProps) => {
             const formData = new FormData();
 
             newImages.forEach((img) => formData.append("files", img.file));
+            selectedCategories.forEach((cat) =>
+                formData.append("categoryIds", cat.id)
+            );
             formData.append("name", productName);
             formData.append("price", String(price));
             formData.append("condition", condition);
             formData.append("description", description);
             formData.append("size", brand); // backend field reused for brand
             formData.append("color", model); // backend field reused for model
+            // formData.append("categoryIds", categoryIds)
 
             const response = await fetchWithAuth(API_URLS.createProduct, {
                 method: "POST",
@@ -274,7 +318,60 @@ const CreateProductForm = ({ onSuccess }: CreateProductFormProps) => {
                                 ))}
                             </NativeSelect>
                         </Box>
-
+                        <Box>
+                            <InputLabel
+                                variant="standard"
+                                htmlFor="category-select"
+                                required
+                                sx={{ mb: 1 }}
+                            >
+                                Category
+                            </InputLabel>
+                            <NativeSelect
+                                inputProps={{
+                                    name: "category",
+                                    id: "category-select",
+                                }}
+                                value={categorySelectValue}
+                                onChange={(e) => {
+                                    setCategorySelectValue(e.target.value);
+                                    handleCategorySelect(e);
+                                    // setCategorySelectValue(""); // reset après ajout
+                                }}
+                                sx={{
+                                    maxWidth: 240,
+                                    mr: 2,
+                                    overflow: "hidden",
+                                }}
+                            >
+                                <option value="clear">
+                                    {selectedCategories.length
+                                        ? "Clear"
+                                        : "Select categories"}
+                                </option>
+                                {registeredCategories?.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {capitalizeFirstLetter(
+                                            cat.name.toLowerCase()
+                                        )}
+                                    </option>
+                                ))}
+                            </NativeSelect>
+                            {selectedCategories.map((cat) => (
+                                <Chip
+                                    key={cat.id}
+                                    label={cat.name}
+                                    sx={{
+                                        borderRadius: 999,
+                                        fontWeight: 500,
+                                    }}
+                                    onDelete={() =>
+                                        handleRemoveCategory(cat.id)
+                                    }
+                                    deleteIcon={<ClearIcon />}
+                                />
+                            ))}
+                        </Box>
                         <TextField
                             id="description-input"
                             label="Description"
@@ -293,7 +390,11 @@ const CreateProductForm = ({ onSuccess }: CreateProductFormProps) => {
                         >
                             Price
                         </Typography>
-                        <PriceInput price={price} handleSetPrice={setPrice} />
+                        <PriceInput
+                            price={price}
+                            handleSetPrice={setPrice}
+                            isDisabled={false}
+                        />
 
                         <Divider sx={{ my: 2 }} />
 

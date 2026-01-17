@@ -68,7 +68,6 @@ const HomePage = () => {
 
                 <Grid container spacing={2} py={1} marginBottom={0}>
                     {data?.products.items.map((product) => {
-                        console.log("product dans home page ", product);
                         return (
                             <Grid
                                 marginBottom={2}

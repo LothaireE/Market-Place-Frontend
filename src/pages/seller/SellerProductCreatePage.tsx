@@ -1,8 +1,10 @@
 import { useState } from "react";
 import CreateProductForm from "../../components/forms/CreateProductForm";
 import Toast from "../../components/common/Toast";
-import type { Product } from "../../types/product.type";
+import type { Category, Product } from "../../types/product.type";
 import { Container } from "@mui/material";
+import { GET_CATEGORIES } from "../../library/graphql/queries/categories";
+import { useQuery } from "@apollo/client";
 
 const SellerProductFormPage = () => {
     const [openToast, setOpenToast] = useState(false);
@@ -15,6 +17,9 @@ const SellerProductFormPage = () => {
         setOpenToast(true);
     }
 
+    // const { loading, error, data } = useQuery<{ categories: Category[] }>(
+    const { data } = useQuery<{ categories: Category[] }>(GET_CATEGORIES);
+
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
             <Toast
@@ -23,7 +28,10 @@ const SellerProductFormPage = () => {
                 message={toastMessage}
                 severity="success"
             />
-            <CreateProductForm onSuccess={handleCreateSuccess} />
+            <CreateProductForm
+                onSuccess={handleCreateSuccess}
+                registeredCategories={data?.categories}
+            />
         </Container>
     );
 };

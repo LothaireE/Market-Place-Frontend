@@ -83,14 +83,14 @@ const SellerDashboardPage = () => {
     const navigate = useNavigate();
     // const { user } = useAuthContext(); // si ton hook s'appelle différemment, adapte-le
     const { sellerProfile } = useSellerContext();
-    console.log("sellerProfile ", sellerProfile?.user.username);
+
     const pagination = { sortBy: "DATE", sortDirection: "DESC" };
     const { data, loading, error } = useQuery(GET_SELLER_PRODUCTS, {
         variables: { pagination: pagination },
     });
 
     const handleCreateListing = () => {
-        navigate("/seller/products/new");
+        navigate("/seller/new");
     };
 
     const handleViewProducts = () => {
@@ -100,8 +100,6 @@ const SellerDashboardPage = () => {
     const username = capitalizeFirstLetter(
         sellerProfile?.user.username ?? "seller"
     );
-
-    console.log({ data });
 
     if (loading) {
         return (

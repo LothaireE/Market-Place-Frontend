@@ -85,7 +85,6 @@ const ProductCard = ({
     //     e.stopPropagation();
     //     onClick();
     // };
-    // console.log("Render ProductCard:", product);
 
     return (
         <Paper
@@ -233,7 +232,7 @@ const ProductCard = ({
                 {product?.categories?.map((cat) => {
                     return (
                         <Typography
-                            key={cat.id}
+                            key={cat.id + cat.name}
                             variant="caption"
                             color="text.secondary"
                             sx={{

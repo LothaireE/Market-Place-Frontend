@@ -58,7 +58,6 @@ export function DeleteProductModal({
     product: Product;
     handleDelete: (productId: string) => void;
 }) {
-    console.log("product dansmodal", product);
     return (
         <Modal
             open={open}

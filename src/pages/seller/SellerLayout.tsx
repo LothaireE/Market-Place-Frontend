@@ -108,7 +108,7 @@ const SellerLayout = () => {
                             <AddCircleOutlineIcon fontSize="small" />
                         </ListItemIcon>
                         {/* <ListItemText primary="List a new instrument" /> */}
-                        <ListItemText primary="Sell some more?" />
+                        <ListItemText primary="Sell gear" />
                     </ListItemButton>
 
                     <ListItemButton

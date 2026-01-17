@@ -8,7 +8,11 @@ import {
     FormControlLabel,
     Switch,
 } from "@mui/material";
-import type { ProductCondition, ProductImage } from "../../types/product.type";
+import type {
+    Category,
+    ProductCondition,
+    ProductImage,
+} from "../../types/product.type";
 import UpdateProductForm from "../../components/forms/UpdateProductForm";
 import Toast from "../../components/common/Toast";
 import { capitalizeFirstLetter } from "../../utils/textFormat";
@@ -27,7 +31,9 @@ type ProductUpdateQueryResponse = {
             };
         };
         images: [ProductImage];
+        categories: [Category];
     };
+    categories: Category[];
 };
 
 const GET_PRODUCT_BY_ID = gql`
@@ -52,6 +58,14 @@ const GET_PRODUCT_BY_ID = gql`
                 format
                 name
             }
+            categories {
+                id
+                name
+            }
+        }
+        categories {
+            id
+            name
         }
     }
 `;
@@ -121,6 +135,7 @@ const SellerProductEditPage = () => {
                 product={data?.product}
                 onSuccess={handleSuccess}
                 mode={editStatus}
+                registeredCategories={data?.categories}
             />
         </Container>
     );

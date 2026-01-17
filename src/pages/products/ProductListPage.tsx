@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
     Box,
     Container,
@@ -15,11 +15,13 @@ import {
     Button,
     Pagination,
     CircularProgress,
+    IconButton,
     type SelectChangeEvent,
 } from "@mui/material";
 import EuroIcon from "@mui/icons-material/Euro";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import SortIcon from "@mui/icons-material/Sort";
+import ClearIcon from "@mui/icons-material/Clear";
 import { useLazyQuery, useQuery } from "@apollo/client";
 import { useNavigate, useSearchParams } from "react-router";
 import type {
@@ -39,6 +41,11 @@ import ProductCard from "../../components/products/ProductCard";
 // import OutsideAlerter from "../../components/common/OutsideAlerter";
 import { useOutsideClick } from "../../hooks/useOutsideClick";
 import SearchDropDownSelector from "../../components/header/search/SearchDropDownSelector";
+import {
+    applyNewSearchParams,
+    type FilterUpdate,
+} from "../../utils/applyNewSearchParams";
+import { useDebouncedRange } from "../../hooks/useDebouncedEffect";
 // À adapter à ton schéma GraphQL exact
 
 const pagination = {
@@ -58,7 +65,9 @@ export type PaginationInput = {
 export type ProductFilterInput = {
     search?: string;
     category?: string;
-    condition?: ProductCondition;
+    condition?: [ProductCondition] | null;
+    minPrice?: number | null;
+    maxPrice?: number | null;
 };
 
 type Product = {
@@ -109,33 +118,58 @@ type LoadProductByNameType = {
 
 const ProductList = () => {
     // const { category } = useParams<{ category: string }>();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const categoryParams = searchParams.get("category") ?? null;
     const searchNameParams = searchParams.get("search") ?? null;
+    const minPriceParams = searchParams.get("minPrice") ?? null;
+    const maxPriceParams = searchParams.get("maxPrice") ?? null;
+    const conditionParams = searchParams.get("condition") ?? null;
+    console.log("conditionParams :", conditionParams);
+    // const sortParams = searchParams.get("sort") ?? null;
 
     const navigate = useNavigate();
 
+    const setFilterParams = (filter: FilterUpdate) => {
+        setSearchParams((prev) => applyNewSearchParams(prev, filter));
+    };
+
     const wrapperRef = useRef<HTMLDivElement | null>(null);
     const searchbarClick = useOutsideClick(wrapperRef);
+
     // Filtres
-    // const [selectedCategory, setSelectedCategory] = useState("All instruments");
     const [selectedCategory, setSelectedCategory] = useState<Category>({
-        id: "",
-        name: "All instruments",
+        id: categoryParams ?? "",
+        name: "",
     });
-    const [conditions, setConditions] = useState<ProductCondition[]>([]);
-    const [priceRange, setPriceRange] = useState<number[]>([0, 2000]);
+    const [selectedConditions, setSelectedConditions] = useState<
+        ProductCondition[]
+    >([]);
+
+    const [priceRange, setPriceRange] = useState<[number, number]>([
+        minPriceParams ? Number(minPriceParams) : 0,
+        maxPriceParams ? Number(maxPriceParams) : 5000,
+    ]);
     const [searchInputValue, setSearchInputValue] = useState("");
     const [searchResult, setSearchResult] = useState<Product[]>([]);
     const [sort, setSort] = useState<string>("NEWEST");
     const [page, setPage] = useState(1);
     // const limit = 12;
     //  const filter = { search: "" };
+
+    const conditionArray = conditionParams
+        ? (conditionParams.split(",") as ProductCondition[])
+        : [];
+
     const paramsfilter = {
         search: searchNameParams,
         category: categoryParams,
+        minPrice: minPriceParams ? Number(minPriceParams) : null,
+        maxPrice: maxPriceParams ? Number(maxPriceParams) : null,
+        condition:
+            conditionArray && conditionArray.length > 0 ? conditionArray : null,
     } as ProductFilterInput;
 
+    console.log("paramsfilter :", paramsfilter);
     const { data, loading, error } = useQuery<ProductsResponse>(
         GET_PRODUCTS_LIST_PAGE,
         {
@@ -148,7 +182,6 @@ const ProductList = () => {
     );
 
     const [loadProductByName, { data: searchData }] =
-        // useLazyQuery<LoadProductByNameType>(GET_PRODUCTS);
         useLazyQuery<LoadProductByNameType>(SEARCH_PRODUCT_BY_NAME);
 
     useEffect(() => {
@@ -161,30 +194,36 @@ const ProductList = () => {
     const totalPages = data?.products.totalPages ?? 1;
     const handleToggleCondition = (cond: ProductCondition) => {
         setPage(1);
-        setConditions((prev) =>
+        setSelectedConditions((prev) =>
             prev.includes(cond)
                 ? prev.filter((c) => c !== cond)
                 : [...prev, cond]
         );
+        setFilterParams({
+            condition: selectedConditions.includes(cond)
+                ? selectedConditions.filter((c) => c !== cond).join(",")
+                : [...selectedConditions, cond].join(","),
+            page: "1",
+        });
     };
 
     const handlePriceChange = (_: Event, value: number | number[]) => {
+        // i will probably have to insert some sort of debounce here
         if (!Array.isArray(value)) return;
-        setPriceRange(value);
+        setPriceRange([value[0], value[1]]);
         setPage(1);
     };
 
     const handleCategoryClick = (cat: SelectedCategory) => {
-        setSelectedCategory(cat);
-        setPage(1);
+        if (!cat.id || cat.id === categoryParams) {
+            setFilterParams({ category: "" });
+            setSelectedCategory({ id: "", name: "" });
+        } else {
+            setFilterParams({ category: cat.id || null, page: "1" });
+            setSelectedCategory(cat);
+        }
     };
 
-    // const handleSortChange = (
-    //     e: React.ChangeEvent<{ value: unknown }> | any
-    // ) => {
-    //     setSort(e.target.value as string);
-    //     setPage(1);
-    // };
     const handleSortChange = (e: SelectChangeEvent<string>) => {
         setSort(e.target.value as string);
         setPage(1);
@@ -195,8 +234,12 @@ const ProductList = () => {
     };
 
     const handleSearchSubmit = (event: React.FormEvent) => {
+        // TODO handle search submit that renders the results of said search in grid
         console.log("event ", event.currentTarget);
         event.preventDefault();
+        setSearchInputValue("");
+        setSearchResult([]);
+        setFilterParams({ search: searchInputValue });
         setPage(1);
     };
 
@@ -212,18 +255,27 @@ const ProductList = () => {
             },
         });
     });
-    // console.log("category param ", categoryParams);
-    // console.log("search param ", searchNameParams);
-    // console.log({ searchData });
+
+    const onRangeChangeDebounced = useCallback((range: [number, number]) => {
+        setFilterParams({ minPrice: range[0], maxPrice: range[1], page: "1" });
+    }, []);
+
+    useDebouncedRange(priceRange, 500, onRangeChangeDebounced);
 
     const handleSearchSelect = (productId: string) => {
-        console.log({ productId });
         setSearchInputValue("");
         setSearchResult([]);
-        navigate(`/products/${searchInputValue}`);
+        navigate(`/products/${productId}`);
     };
 
-    console.log({ searchInputValue });
+    const handleClearSearchName = () => {
+        console.info("You clicked the delete icon.");
+        setSearchInputValue("");
+        setSearchResult([]);
+        setFilterParams({ search: "" });
+    };
+
+    console.log("selectedConditions :", selectedConditions);
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -235,11 +287,28 @@ const ProductList = () => {
                     </Typography>
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                    Guitars, synths, drums, studio gear and more — find the next
+                    Guitars, synths, drums, studio gear and more, find the next
                     piece of your setup.
                 </Typography>
             </Box>
-
+            {searchNameParams && (
+                <Box sx={{ mb: 3, ml: 3 }}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography variant="h4" fontWeight={700}>
+                            {searchNameParams}
+                        </Typography>
+                        <IconButton
+                            size="large"
+                            aria-label="clear search results"
+                            aria-haspopup="true"
+                            onClick={handleClearSearchName}
+                            color="inherit"
+                        >
+                            <ClearIcon />
+                        </IconButton>
+                    </Stack>
+                </Box>
+            )}
             <Grid container spacing={3}>
                 {/* dashboard */}
 
@@ -297,7 +366,7 @@ const ProductList = () => {
                                     key={c.value}
                                     control={
                                         <Checkbox
-                                            checked={conditions.includes(
+                                            checked={selectedConditions.includes(
                                                 c.value
                                             )}
                                             onChange={() =>
@@ -469,7 +538,6 @@ const ProductList = () => {
                                 marginBottom={2}
                             >
                                 <ProductCard
-                                    key={product.id}
                                     product={{ ...product }}
                                     onClick={() => goToDetails(product.id)}
                                 />

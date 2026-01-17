@@ -13,6 +13,7 @@ import {
     Divider,
     IconButton,
     Paper,
+    Chip,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
@@ -24,6 +25,8 @@ import { useNavigate } from "react-router";
 import type { ProductCondition, ProductImage } from "../../types/product.type";
 import PriceInput from "../common/PriceInput";
 import CustomAccordion from "../common/CustomAccordion";
+import ClearIcon from "@mui/icons-material/Clear";
+import type { Category } from "../../types/product.type";
 
 const VisuallyHiddenInput = styled("input")({
     clip: "rect(0 0 0 0)",
@@ -59,9 +62,11 @@ type UpdateProductFormProps = {
             };
         };
         images: [ProductImage];
+        categories: [Category];
     };
     onSuccess?: (data: unknown) => void;
     mode: "read" | "edit" | "create";
+    registeredCategories?: Category[];
 };
 
 type NewImage = {
@@ -75,6 +80,7 @@ const UpdateProductForm = ({
     product,
     onSuccess,
     mode,
+    registeredCategories,
 }: UpdateProductFormProps) => {
     const isReadOnly = mode === "read";
     const { fetchWithAuth } = useApi();
@@ -95,6 +101,10 @@ const UpdateProductForm = ({
     );
     const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
     const [newImages, setNewImages] = useState<NewImage[]>([]);
+    const [selectedCategories, setSelectedCategories] = useState<Category[]>(
+        product.categories ?? []
+    );
+    const [categorySelectValue, setCategorySelectValue] = useState("");
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -107,6 +117,7 @@ const UpdateProductForm = ({
         setCondition(product.condition as ProductCondition);
         setDescription(product.description ?? "");
         setExistingImages(product.images ?? []);
+        setSelectedCategories(product.categories ?? []);
     }, [product]);
 
     useEffect(() => {
@@ -129,6 +140,32 @@ const UpdateProductForm = ({
                 ? prev.filter((id) => id !== publicId)
                 : [...prev, publicId]
         );
+    };
+
+    const handleCategorySelect = (
+        event: React.ChangeEvent<HTMLSelectElement>
+    ) => {
+        const value = event.target.value;
+
+        if (!value) return;
+
+        if (value === "clear" && selectedCategories.length)
+            setSelectedCategories([]);
+
+        const alreadySelected = selectedCategories.some(
+            (cat) => cat.id === value
+        );
+        if (alreadySelected) return;
+
+        const category = registeredCategories?.find((cat) => cat.id === value);
+        if (category) {
+            setSelectedCategories((prev) => [...prev, category]);
+        }
+    };
+
+    const handleRemoveCategory = (catId: string) => {
+        if (isReadOnly) return;
+        setSelectedCategories((prev) => prev.filter((cat) => cat.id !== catId));
     };
 
     const handleAddNewImages = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,6 +217,9 @@ const UpdateProductForm = ({
             imagesToDelete.forEach((publicId) => {
                 formData.append("imagesToRemove", publicId);
             });
+            selectedCategories.forEach((cat) =>
+                formData.append("categoryIds", cat.id)
+            );
 
             formData.append("name", productName);
             formData.append("price", String(price));
@@ -340,7 +380,64 @@ const UpdateProductForm = ({
                                 ))}
                             </NativeSelect>
                         </Box>
+                        <Box>
+                            <InputLabel
+                                variant="standard"
+                                htmlFor="category-select"
+                                required
+                            >
+                                Category
+                            </InputLabel>
 
+                            <NativeSelect
+                                disabled={isReadOnly}
+                                inputProps={{
+                                    name: "category",
+                                    id: "category-select",
+                                }}
+                                value={categorySelectValue}
+                                onChange={(e) => {
+                                    setCategorySelectValue(e.target.value);
+                                    handleCategorySelect(e);
+                                    setCategorySelectValue(""); // reset après ajout
+                                }}
+                                sx={{ maxWidth: 240 }}
+                            >
+                                <option value="">None</option>
+
+                                {registeredCategories?.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {capitalizeFirstLetter(
+                                            cat.name.toLowerCase()
+                                        )}
+                                    </option>
+                                ))}
+                            </NativeSelect>
+
+                            <Box
+                                sx={{
+                                    mt: 1,
+                                    display: "flex",
+                                    gap: 1,
+                                    flexWrap: "wrap",
+                                }}
+                            >
+                                {selectedCategories.map((cat) => (
+                                    <Chip
+                                        key={cat.id}
+                                        label={cat.name}
+                                        onDelete={() =>
+                                            handleRemoveCategory(cat.id)
+                                        }
+                                        deleteIcon={<ClearIcon />}
+                                        sx={{
+                                            borderRadius: 999,
+                                            fontWeight: 500,
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
                         <TextField
                             id="product-description-input"
                             label="Description"

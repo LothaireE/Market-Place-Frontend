@@ -1,6 +1,10 @@
 import { gql, useQuery } from "@apollo/client";
 import { useNavigate, useParams } from "react-router";
-import type { ProductCondition, ProductImage } from "../../types/product.type";
+import type {
+    Category,
+    ProductCondition,
+    ProductImage,
+} from "../../types/product.type";
 import DisplayProductDetails from "../../components/products/DisplayProductDetails";
 import {
     Box,
@@ -47,8 +51,8 @@ export type ProductDetail = {
     description?: string | null;
     price: number;
     condition: ProductCondition;
-    category?: string | null;
-    createdAt?: string | null;
+    categories?: [Category] | null;
+    createdAt: string | null;
     images: ProductImage[];
     sellerProfile: {
         id: string;
@@ -121,7 +125,7 @@ const ProductDetailPage = () => {
                     }}
                 >
                     <Typography variant="h6" color="error" gutterBottom>
-                        We couldn&apos;t find this listing.
+                        We couldn't find this listing.
                     </Typography>
                     <Typography
                         variant="body2"

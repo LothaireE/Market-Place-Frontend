@@ -74,15 +74,17 @@ const DisplayProductDetails = (product: ProductDetail) => {
     // TODO this is also ugly and needs a proper fix
     const mainImageUrl = selectedImage || product?.images?.[0]?.url || null;
 
-    const dateNum = Number(product?.createdAt);
-
-    // TODO fix the createdAt updatedAt format
-    // this below cannot be viable
-    const dateString = new Date(dateNum ?? "").toLocaleDateString("en-EN", {
+    const createdAtToFormat = new Date(
+        product?.createdAt || ""
+    ).toLocaleDateString("en-GB", {
         day: "2-digit",
-        month: "long",
+        month: "2-digit",
         year: "numeric",
     });
+
+    const flatCategories = product.categories?.length
+        ? product.categories?.map((cat) => cat.name).join(", ")
+        : null;
 
     return (
         <Paper sx={{ p: { xs: 2, md: 3 }, borderRadius: 0 }}>
@@ -192,13 +194,14 @@ const DisplayProductDetails = (product: ProductDetail) => {
                                     textTransform: "capitalize",
                                 }}
                             />
-                            {product.category && (
+                            {product.categories?.map((category) => (
                                 <Chip
+                                    key={category.id}
                                     size="small"
-                                    label={product.category}
+                                    label={category.name}
                                     variant="outlined"
                                 />
-                            )}
+                            ))}
                         </Stack>
 
                         {product.createdAt && (
@@ -206,7 +209,7 @@ const DisplayProductDetails = (product: ProductDetail) => {
                                 variant="caption"
                                 color="text.secondary"
                             >
-                                Listed on {dateString}
+                                Listed on {createdAtToFormat}
                                 {/* {new Date(
                                         product.createdAt
                                     ).toLocaleDateString()} */}
@@ -389,17 +392,15 @@ const DisplayProductDetails = (product: ProductDetail) => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Typography variant="h6" fontWeight={600} gutterBottom>
-                        Listing details
+                        Infos
                     </Typography>
                     <Stack spacing={0.5}>
                         <DetailRow
-                            label="Category"
-                            value={product.category || "Instrument"}
+                            label="Categories"
+                            value={flatCategories || "N/A"}
                         />
                         <DetailRow label="Condition" value={conditionLabel} />
-                        {product.createdAt && (
-                            <DetailRow label="Listed" value={dateString} />
-                        )}
+                        <DetailRow label="Listed" value={createdAtToFormat} />
                     </Stack>
                 </Grid>
             </Grid>

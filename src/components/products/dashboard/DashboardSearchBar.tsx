@@ -13,7 +13,7 @@ const DashboardSearchBar = ({
     value,
     handleOnChange,
     handleSearchSubmit,
-    placeholder = "Search by name, brand, model…",
+    placeholder,
 }: Props) => {
     return (
         <Box
@@ -27,6 +27,7 @@ const DashboardSearchBar = ({
                 placeholder={placeholder}
                 value={value}
                 onChange={(event) => handleOnChange(event.target.value)}
+                autoComplete="off"
                 slotProps={{
                     input: {
                         startAdornment: (

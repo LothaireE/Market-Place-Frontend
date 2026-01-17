@@ -71,7 +71,6 @@ const AppHeader = () => {
     const handleToggleMobileDrawer = (
         value: "open" | "close" | "toggle" = "toggle"
     ) => {
-        console.log({ value });
         if (value === "open") return setMobileOpen(true);
         if (value === "close") return setMobileOpen(false);
         setMobileOpen((prev) => !prev);
@@ -79,9 +78,9 @@ const AppHeader = () => {
 
     const handleSearchSubmit = (event: React.FormEvent) => {
         event.preventDefault();
-        console.log(searchResult);
+        setSearchInputValue("");
+        setSearchResult([]);
         navigate(`/products/?search=${searchInputValue}`);
-        // TODO: handle refresh once on page, search stays the same
     };
 
     useDebouncedSearch(searchInputValue, 500, async (search: string) => {

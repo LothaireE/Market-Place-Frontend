@@ -100,6 +100,7 @@ const HeroBanner = () => {
                         sx={{
                             mt: 3,
                             display: "flex",
+                            gap: 0.5,
                             flexDirection: { xs: "column", md: "row" },
                         }}
                     >

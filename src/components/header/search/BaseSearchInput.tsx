@@ -87,6 +87,7 @@ export const BaseSearchInput = ({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
+                autoComplete="off"
             />
         </InputWrapper>
     );
