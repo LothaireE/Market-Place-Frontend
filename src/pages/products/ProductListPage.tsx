@@ -28,7 +28,7 @@ import type {
     Category,
     ProductCondition,
     ProductImage,
-} from "../../types/product.type"; // adapte le chemin si besoin
+} from "../../types/product.type";
 import DashboardCategories from "../../components/products/dashboard/DashboardCategories";
 import DashboardSearchBar from "../../components/products/dashboard/DashboardSearchBar";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
@@ -37,8 +37,6 @@ import {
     SEARCH_PRODUCT_BY_NAME,
 } from "../../library/graphql/queries/products";
 import ProductCard from "../../components/products/ProductCard";
-// import HeaderDesktopSearch from "../../components/header/search/HeaderDesktopSearch";
-// import OutsideAlerter from "../../components/common/OutsideAlerter";
 import { useOutsideClick } from "../../hooks/useOutsideClick";
 import SearchDropDownSelector from "../../components/header/search/SearchDropDownSelector";
 import {
@@ -46,7 +44,6 @@ import {
     type FilterUpdate,
 } from "../../utils/applyNewSearchParams";
 import { useDebouncedRange } from "../../hooks/useDebouncedEffect";
-// À adapter à ton schéma GraphQL exact
 
 const pagination = {
     page: null,
@@ -117,21 +114,26 @@ type LoadProductByNameType = {
 };
 
 const ProductList = () => {
-    // const { category } = useParams<{ category: string }>();
     const [searchParams, setSearchParams] = useSearchParams();
     const categoryParams = searchParams.get("category") ?? null;
     const searchNameParams = searchParams.get("search") ?? null;
     const minPriceParams = searchParams.get("minPrice") ?? null;
     const maxPriceParams = searchParams.get("maxPrice") ?? null;
     const conditionParams = searchParams.get("condition") ?? null;
-    console.log("conditionParams :", conditionParams);
     // const sortParams = searchParams.get("sort") ?? null;
 
     const navigate = useNavigate();
 
-    const setFilterParams = (filter: FilterUpdate) => {
-        setSearchParams((prev) => applyNewSearchParams(prev, filter));
-    };
+    // const setFilterParams = (filter: FilterUpdate) => {
+    //     setSearchParams((prev) => applyNewSearchParams(prev, filter));
+    // };
+
+    const setFilterParams = useCallback(
+        (filter: FilterUpdate) => {
+            setSearchParams((prev) => applyNewSearchParams(prev, filter));
+        },
+        [setSearchParams]
+    );
 
     const wrapperRef = useRef<HTMLDivElement | null>(null);
     const searchbarClick = useOutsideClick(wrapperRef);
@@ -256,9 +258,16 @@ const ProductList = () => {
         });
     });
 
-    const onRangeChangeDebounced = useCallback((range: [number, number]) => {
-        setFilterParams({ minPrice: range[0], maxPrice: range[1], page: "1" });
-    }, []);
+    const onRangeChangeDebounced = useCallback(
+        (range: [number, number]) => {
+            setFilterParams({
+                minPrice: range[0],
+                maxPrice: range[1],
+                page: "1",
+            });
+        },
+        [setFilterParams]
+    );
 
     useDebouncedRange(priceRange, 500, onRangeChangeDebounced);
 

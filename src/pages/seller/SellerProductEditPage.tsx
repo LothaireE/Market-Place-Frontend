@@ -81,7 +81,6 @@ const SellerProductEditPage = () => {
         { variables: { id } }
     );
     const handleSuccess = () => {
-        alert("Product updated successfully!");
         setOpenToast(true);
         setToastMessage(
             `Product "${data?.product.name}" updated successfully!`
