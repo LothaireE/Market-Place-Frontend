@@ -22,18 +22,15 @@ import ClearIcon from "@mui/icons-material/Clear";
 import { capitalizeFirstLetter } from "../../utils/textFormat";
 import { API_URLS } from "../../config/env";
 import { useApi } from "../../hooks/useApi";
-import { useNavigate } from "react-router";
 import type {
     Category,
+    NewImage,
     Product,
     ProductCondition,
 } from "../../types/product.type";
 import PriceInput from "../common/PriceInput";
-
-type NewImage = {
-    file: File;
-    previewUrl: string;
-};
+import ColorSelector from "../common/ColorSelector";
+import { CONDITIONS } from "../../constants/products";
 
 const VisuallyHiddenInput = styled("input")({
     clip: "rect(0 0 0 0)",
@@ -47,16 +44,8 @@ const VisuallyHiddenInput = styled("input")({
     width: 1,
 });
 
-const conditions: ProductCondition[] = [
-    "EXCELLENT",
-    "GOOD",
-    "CORRECT",
-    "USED",
-    "DAMAGED",
-];
-
 type CreateProductFormProps = {
-    onSuccess?: (data: { product: Product }) => void;
+    onSuccess?: (product: Product) => void;
     registeredCategories?: { id: string; name: string }[];
 };
 
@@ -65,24 +54,23 @@ const CreateProductForm = ({
     registeredCategories,
 }: CreateProductFormProps) => {
     const { fetchWithAuth } = useApi();
-    const navigate = useNavigate();
 
     const [productName, setProductName] = useState("Fender Stratocaster");
-    const [price, setPrice] = useState<number>(450);
+    const [price, setPrice] = useState<number>(0);
     const [condition, setCondition] = useState<ProductCondition>("EXCELLENT");
     const [description, setDescription] = useState(
         "Great sounding guitar, recently set up. Includes gig bag."
     );
-    const [brand, setBrand] = useState("Fender"); // stored in `size` field
-    const [model, setModel] = useState("Stratocaster"); // stored in `color` field
-
-    const [accept, setAccept] = useState(true);
+    const [size, setSize] = useState<string | null>(null);
+    const [color, setColor] = useState<string | null>(null);
+    const [accept, setAccept] = useState(false);
     const [newImages, setNewImages] = useState<NewImage[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<Category[]>(
         []
     );
     const [categorySelectValue, setCategorySelectValue] = useState("");
 
+    const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [info, setInfo] = useState<string | null>(null);
@@ -93,6 +81,24 @@ const CreateProductForm = ({
             newImages.forEach((img) => URL.revokeObjectURL(img.previewUrl));
         };
     }, [newImages]);
+
+    const requiredFieldErrors = {
+        name: productName.trim().length === 0 ? "Required" : "",
+        images:
+            newImages.length === 0
+                ? "Provide at least one picture of your article"
+                : "",
+        price: price <= 0 ? "You must set a price" : "",
+        condition: !condition ? "Required" : "",
+        accept: !accept ? "You must accept our terms and conditions" : "",
+    };
+
+    const isValid =
+        !requiredFieldErrors.name &&
+        !requiredFieldErrors.images &&
+        !requiredFieldErrors.price &&
+        !requiredFieldErrors.condition &&
+        !requiredFieldErrors.accept;
 
     const handleChangeCondition = (
         event: React.ChangeEvent<HTMLSelectElement>
@@ -149,15 +155,19 @@ const CreateProductForm = ({
         });
     };
 
+    const handleSelectColor = (selectedColor: string) => {
+        if (selectedColor === color) setColor(null);
+        else setColor(selectedColor);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setInfo(null);
+        setSubmitted(true);
 
-        if (!accept) {
-            setError(
-                "You must accept the terms before publishing your listing."
-            );
+        if (!isValid) {
+            setError("Please fill all required fields.");
             return;
         }
 
@@ -174,9 +184,8 @@ const CreateProductForm = ({
             formData.append("price", String(price));
             formData.append("condition", condition);
             formData.append("description", description);
-            formData.append("size", brand); // backend field reused for brand
-            formData.append("color", model); // backend field reused for model
-            // formData.append("categoryIds", categoryIds)
+            if (size) formData.append("size", size);
+            if (color) formData.append("color", color);
 
             const response = await fetchWithAuth(API_URLS.createProduct, {
                 method: "POST",
@@ -194,12 +203,9 @@ const CreateProductForm = ({
 
             setInfo("Listing created successfully! Redirecting…");
             onSuccess?.(data.product ?? null);
-
-            setTimeout(() => {
-                navigate("/");
-            }, 2000);
         } catch (err) {
             if (err instanceof Error) {
+                console.log({ err });
                 setError(
                     err.message || "An error occurred while creating listing."
                 );
@@ -241,7 +247,7 @@ const CreateProductForm = ({
                         Preview
                     </Typography>
                     <Typography variant="body2">
-                        <strong>{productName}</strong> • {brand} {model} •{" "}
+                        <strong>{productName}</strong> • {size} {color} •{" "}
                         {condition} • {price} €
                     </Typography>
                 </Box>
@@ -263,6 +269,9 @@ const CreateProductForm = ({
                             helperText='Example: "Fender Stratocaster 1998", "Yamaha P-45 Digital Piano"'
                             id="product-name-input"
                             name="productName"
+                            error={
+                                submitted && Boolean(requiredFieldErrors.name)
+                            }
                         />
 
                         <Stack
@@ -270,26 +279,38 @@ const CreateProductForm = ({
                             spacing={2}
                         >
                             <TextField
-                                label="Brand"
+                                label="Size"
                                 variant="standard"
-                                value={brand}
-                                onChange={(e) => setBrand(e.target.value)}
+                                value={size ?? ""}
+                                onChange={(e) => setSize(e.target.value)}
                                 fullWidth
-                                id="brand-input"
-                                name="productBrand"
-                                helperText='Example: "Fender", "Yamaha", "Roland"'
+                                id="size-input"
+                                name="productSize"
+                                helperText='Example: "100x45x12cm"'
+                                autoComplete="off"
                             />
-                            <TextField
-                                label="Model / Reference"
-                                variant="standard"
-                                value={model}
-                                onChange={(e) => setModel(e.target.value)}
-                                fullWidth
-                                id="model-input"
-                                name="productModel"
-                                helperText='Example: "Stratocaster", "P-45", "TD-17KVX"'
-                            />
+
+                            {/* color picker  */}
                         </Stack>
+                        <Box id="color-pick" display="flex" flex={1}>
+                            <ColorSelector
+                                onSelectedColor={handleSelectColor}
+                                selectedColor={color}
+                            />
+                            {color && (
+                                <Chip
+                                    label={color}
+                                    sx={{
+                                        borderRadius: 999,
+                                        fontWeight: 500,
+                                        ml: 1,
+                                    }}
+                                    variant="outlined"
+                                    onDelete={() => setColor(null)}
+                                    deleteIcon={<ClearIcon />}
+                                />
+                            )}
+                        </Box>
 
                         <Box>
                             <InputLabel
@@ -309,7 +330,7 @@ const CreateProductForm = ({
                                 onChange={handleChangeCondition}
                                 sx={{ maxWidth: 240 }}
                             >
-                                {conditions.map((cond) => (
+                                {CONDITIONS.map((cond) => (
                                     <option key={cond} value={cond}>
                                         {capitalizeFirstLetter(
                                             cond.toLowerCase()
@@ -380,21 +401,52 @@ const CreateProductForm = ({
                             variant="standard"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            helperText="Mention the condition, how often it was used, if it has been serviced, and what is included (case, cables, pedals, etc.)."
+                            helperText="Mention wear and tear, service history, playability, noise issues, and included accessories (case, cables, pedals, etc.)."
                         />
 
-                        <Typography
+                        {/* <Typography
                             variant="subtitle1"
                             fontWeight={600}
                             sx={{ mb: 1 }}
                         >
                             Price
-                        </Typography>
-                        <PriceInput
-                            price={price}
-                            handleSetPrice={setPrice}
-                            isDisabled={false}
-                        />
+                        </Typography> */}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
+                        >
+                            <InputLabel
+                                variant="standard"
+                                htmlFor="price-input"
+                                required
+                            >
+                                Price (€)
+                            </InputLabel>
+                            <PriceInput
+                                price={price}
+                                handleSetPrice={setPrice}
+                                isDisabled={false}
+                            />
+                            {submitted && requiredFieldErrors.price && (
+                                <Typography
+                                    variant="caption"
+                                    color="error"
+                                    sx={{ display: "block", mt: 0.5 }}
+                                >
+                                    {requiredFieldErrors.price}
+                                </Typography>
+                            )}
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                id="subtext"
+                            >
+                                Set a fair price based on condition and current
+                                market value.
+                            </Typography>
+                        </Box>
 
                         <Divider sx={{ my: 2 }} />
 
@@ -489,6 +541,15 @@ const CreateProductForm = ({
                                     </Stack>
                                 </Box>
                             )}
+                            {submitted && requiredFieldErrors.images && (
+                                <Typography
+                                    variant="caption"
+                                    color="error"
+                                    sx={{ display: "block", mt: 0.5 }}
+                                >
+                                    {requiredFieldErrors.images}
+                                </Typography>
+                            )}
                         </Box>
 
                         <Divider sx={{ my: 2 }} />
@@ -501,14 +562,20 @@ const CreateProductForm = ({
                                         setAccept(e.target.checked)
                                     }
                                     color="primary"
+                                    required
                                 />
                             }
                             label="I accept the marketplace terms and conditions."
                         />
+                        {submitted && requiredFieldErrors.accept && (
+                            <Typography variant="caption" color="error">
+                                {requiredFieldErrors.accept}
+                            </Typography>
+                        )}
 
                         {error && (
                             <Typography color="error" variant="body2">
-                                {error}
+                                ici {error}
                             </Typography>
                         )}
                         {info && (
@@ -524,7 +591,7 @@ const CreateProductForm = ({
                                 type="submit"
                                 variant="contained"
                                 color="primary"
-                                disabled={loading || !accept}
+                                disabled={loading || !isValid}
                                 sx={{ maxWidth: 260 }}
                             >
                                 {loading ? (

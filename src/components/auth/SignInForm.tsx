@@ -68,13 +68,11 @@ const SignInForm = ({ onSuccess }: SignInFormProps) => {
             <Stack spacing={2}>
                 <TextField
                     label="Email"
-                    // margin="normal"
                     required
                     fullWidth
                     id="email"
                     name="email"
                     autoComplete="email"
-                    // autoFocus
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                 />

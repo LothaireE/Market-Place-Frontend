@@ -18,11 +18,11 @@ import {
 import type { ProductDetail } from "../../pages/products/ProductDetailPage";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
-import EuroIcon from "@mui/icons-material/Euro";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ShieldIcon from "@mui/icons-material/Shield";
 import { useState } from "react";
+import ShoppingBasketIcon from "@mui/icons-material/ShoppingBasket";
 
 const DetailRow = ({
     label,
@@ -141,18 +141,11 @@ const DisplayProductDetails = (product: ProductDetail) => {
                                         }
                                         sx={{
                                             cursor: "pointer",
-                                            // borderRadius: 1,
                                             overflow: "hidden",
                                             border: isSelected
                                                 ? (theme) =>
                                                       `2px solid ${theme.palette.primary.main}`
                                                 : "none",
-                                            // opacity: isSelected ? 1 : 0.8,
-                                            // transition:
-                                            //     "opacity 0.2s ease, outline 0.2s ease",
-                                            // "&:hover": {
-                                            //     opacity: 1,
-                                            // },
                                         }}
                                     >
                                         <img
@@ -196,7 +189,7 @@ const DisplayProductDetails = (product: ProductDetail) => {
                             />
                             {product.categories?.map((category) => (
                                 <Chip
-                                    key={category.id}
+                                    key={category.id + category.name}
                                     size="small"
                                     label={category.name}
                                     variant="outlined"
@@ -251,7 +244,7 @@ const DisplayProductDetails = (product: ProductDetail) => {
                                 variant="contained"
                                 fullWidth
                                 onClick={handleAddToCart}
-                                startIcon={<EuroIcon />}
+                                startIcon={<ShoppingBasketIcon />}
                             >
                                 Add to cart
                             </Button>

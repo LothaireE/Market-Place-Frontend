@@ -1,6 +1,6 @@
 import { useQuery, gql } from "@apollo/client";
 import { useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import {
     Box,
     CircularProgress,
@@ -72,6 +72,7 @@ const GET_PRODUCT_BY_ID = gql`
 
 const SellerProductEditPage = () => {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const [openToast, setOpenToast] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
     const [editStatus, setEditStatus] = useState<"read" | "edit">("read");
@@ -85,6 +86,9 @@ const SellerProductEditPage = () => {
         setToastMessage(
             `Product "${data?.product.name}" updated successfully!`
         );
+        setTimeout(() => {
+            navigate(`/products/${data?.product.id}`);
+        }, 1500);
     };
 
     if (error) return <p>Error loading product: {error.message}</p>;

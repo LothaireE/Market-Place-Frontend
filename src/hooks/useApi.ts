@@ -1,6 +1,5 @@
 import { API_URLS } from "../config/env";
 import { useAuthContext } from "../context/useAppContext";
-// import { useSellerProfile } from "./useSellerProfile";
 
 export function useApi() {
     const { accessToken, setAccessToken, logout } = useAuthContext();
@@ -51,8 +50,3 @@ export function useApi() {
 
     return { fetchWithAuth };
 }
-
-// export function useIsSeller() {
-//     const { sellerProfile } = useSellerProfile();
-//     return !!sellerProfile;
-// }

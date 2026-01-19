@@ -28,7 +28,7 @@ const AuthForms = () => {
     const [openToast, setOpenToast] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
 
-    const context = useAuthContext();
+    const { setAccessToken } = useAuthContext();
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -39,8 +39,7 @@ const AuthForms = () => {
 
         setToastMessage("Login successful! redirecting to home...");
         setOpenToast(true);
-        // context.handeLogin?.(data);
-        context.setAccessToken?.(data.accessToken);
+        setAccessToken?.(data.accessToken);
 
         setTimeout(() => {
             navigate(from, { replace: true });

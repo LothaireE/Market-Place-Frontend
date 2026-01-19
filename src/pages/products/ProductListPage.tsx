@@ -43,7 +43,7 @@ import {
     applyNewSearchParams,
     type FilterUpdate,
 } from "../../utils/applyNewSearchParams";
-import { useDebouncedRange } from "../../hooks/useDebouncedEffect";
+import { useDebouncedRange } from "../../hooks/useDebouncedRange";
 
 const pagination = {
     page: null,

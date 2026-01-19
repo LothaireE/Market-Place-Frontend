@@ -21,12 +21,17 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { capitalizeFirstLetter } from "../../utils/textFormat";
 import { API_URLS } from "../../config/env";
 import { useApi } from "../../hooks/useApi";
-import { useNavigate } from "react-router";
-import type { ProductCondition, ProductImage } from "../../types/product.type";
+import type {
+    NewImage,
+    ProductCondition,
+    ProductImage,
+} from "../../types/product.type";
 import PriceInput from "../common/PriceInput";
 import CustomAccordion from "../common/CustomAccordion";
 import ClearIcon from "@mui/icons-material/Clear";
 import type { Category } from "../../types/product.type";
+import ColorSelector from "../common/ColorSelector";
+import { CONDITIONS } from "../../constants/products";
 
 const VisuallyHiddenInput = styled("input")({
     clip: "rect(0 0 0 0)",
@@ -39,14 +44,6 @@ const VisuallyHiddenInput = styled("input")({
     whiteSpace: "nowrap",
     width: 1,
 });
-
-const conditions: ProductCondition[] = [
-    "EXCELLENT",
-    "GOOD",
-    "CORRECT",
-    "USED",
-    "DAMAGED",
-];
 
 type UpdateProductFormProps = {
     product: {
@@ -63,15 +60,12 @@ type UpdateProductFormProps = {
         };
         images: [ProductImage];
         categories: [Category];
+        size?: string | null;
+        color?: string | null;
     };
     onSuccess?: (data: unknown) => void;
     mode: "read" | "edit" | "create";
     registeredCategories?: Category[];
-};
-
-type NewImage = {
-    file: File;
-    previewUrl: string;
 };
 
 //TODO: split, refactorer and all there is t shorten UpdateProductForm now
@@ -84,7 +78,6 @@ const UpdateProductForm = ({
 }: UpdateProductFormProps) => {
     const isReadOnly = mode === "read";
     const { fetchWithAuth } = useApi();
-    const navigate = useNavigate();
 
     const [productName, setProductName] = useState(product.name);
     const [price, setPrice] = useState<number>(product.price ?? 0);
@@ -92,8 +85,8 @@ const UpdateProductForm = ({
         product.condition as ProductCondition
     );
     const [description, setDescription] = useState(product.description ?? "");
-    const [brand, setBrand] = useState<string>(""); // stored in `size`
-    const [model, setModel] = useState<string>(""); // stored in `color`
+    const [size, setSize] = useState<string | null>(product.size ?? null); // stored in `size` field
+    const [color, setColor] = useState<string | null>(product.color ?? null);
     const [accept, setAccept] = useState(true);
 
     const [existingImages, setExistingImages] = useState<ProductImage[]>(
@@ -105,7 +98,7 @@ const UpdateProductForm = ({
         product.categories ?? []
     );
     const [categorySelectValue, setCategorySelectValue] = useState("");
-
+    const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [info, setInfo] = useState<string | null>(null);
@@ -118,6 +111,8 @@ const UpdateProductForm = ({
         setDescription(product.description ?? "");
         setExistingImages(product.images ?? []);
         setSelectedCategories(product.categories ?? []);
+        setColor(product.color ?? null);
+        setSize(product.size ?? null);
     }, [product]);
 
     useEffect(() => {
@@ -127,6 +122,24 @@ const UpdateProductForm = ({
         };
     }, [newImages]);
 
+    const requiredFieldErrors = {
+        name: productName.trim().length === 0 ? "Required" : "",
+        images:
+            newImages.length === 0
+                ? "Provide at least one picture of your article"
+                : "",
+        price: price <= 0 ? "You must set a price" : "",
+        condition: !condition ? "Required" : "",
+        accept: !accept ? "You must accept our terms and conditions" : "",
+    };
+
+    const isValid =
+        !requiredFieldErrors.name &&
+        !requiredFieldErrors.images &&
+        !requiredFieldErrors.price &&
+        !requiredFieldErrors.condition &&
+        !requiredFieldErrors.accept;
+
     const handleChangeCondition = (
         event: React.ChangeEvent<HTMLSelectElement>
     ) => {
@@ -135,6 +148,7 @@ const UpdateProductForm = ({
     };
 
     const toggleDeleteExistingImage = (publicId: string) => {
+        if (isReadOnly) return;
         setImagesToDelete((prev) =>
             prev.includes(publicId)
                 ? prev.filter((id) => id !== publicId)
@@ -194,18 +208,23 @@ const UpdateProductForm = ({
         });
     };
 
+    const handleSelectColor = (selectedColor: string) => {
+        if (selectedColor === color) setColor(null);
+        else setColor(selectedColor);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isReadOnly) return;
         setError(null);
         setInfo(null);
-        setLoading(true);
+        setSubmitted(true);
 
-        if (!accept) {
-            setError("You must accept the terms before updating your listing.");
-            setLoading(false);
+        if (!isValid) {
+            setError("Please fill all required fields.");
             return;
         }
+        setLoading(true);
 
         try {
             const formData = new FormData();
@@ -225,8 +244,8 @@ const UpdateProductForm = ({
             formData.append("price", String(price));
             formData.append("condition", condition);
             formData.append("description", description);
-            formData.append("size", brand);
-            formData.append("color", model);
+            if (size) formData.append("size", size);
+            if (color) formData.append("color", color);
 
             const response = await fetchWithAuth(API_URLS.updateProduct, {
                 method: "PUT",
@@ -243,10 +262,6 @@ const UpdateProductForm = ({
             const data = await response.json();
             setInfo("Listing successfully updated!");
             onSuccess?.(data ?? null);
-
-            setTimeout(() => {
-                navigate(`/products/${product.id}`);
-            }, 1500);
         } catch (err) {
             if (err instanceof Error) {
                 setError(err.message || "An error occurred during update.");
@@ -262,18 +277,18 @@ const UpdateProductForm = ({
         <Box sx={{ maxWidth: 900, mx: "auto", mt: 3 }}>
             <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
                 <Typography component="h1" variant="h5" sx={{ mb: 1 }}>
-                    Edit instrument listing
+                    Update your listing
                 </Typography>
                 <Typography
                     variant="body2"
                     color="text.secondary"
                     sx={{ mb: 3 }}
                 >
-                    Update the details of your instrument so buyers have the
-                    most accurate information.
+                    Edit the details of your gear so buyers have the most
+                    accurate information.
                 </Typography>
 
-                {/* Small live preview */}
+                {/* Small live preview  to remove later*/}
                 <Box
                     sx={{
                         mb: 3,
@@ -288,8 +303,9 @@ const UpdateProductForm = ({
                         Listing preview
                     </Typography>
                     <Typography variant="body2">
-                        <strong>{productName}</strong> • {brand || "Brand"}{" "}
-                        {model || "Model"} • {condition} • {price} €
+                        <strong>{productName}</strong> • {color ?? ""}
+                        {size ?? ""} • {capitalizeFirstLetter(condition)} •{" "}
+                        {price} €
                     </Typography>
                 </Box>
 
@@ -315,6 +331,9 @@ const UpdateProductForm = ({
                                     readOnly: isReadOnly,
                                 },
                             }}
+                            error={
+                                submitted && Boolean(requiredFieldErrors.name)
+                            }
                         />
 
                         <Stack
@@ -322,28 +341,15 @@ const UpdateProductForm = ({
                             spacing={2}
                         >
                             <TextField
-                                label="Brand"
+                                label="Size"
                                 variant="standard"
-                                value={brand}
-                                onChange={(e) => setBrand(e.target.value)}
+                                value={size ?? ""}
+                                onChange={(e) => setSize(e.target.value)}
                                 fullWidth
-                                id="brand-input"
-                                name="productBrand"
-                                slotProps={{
-                                    input: {
-                                        readOnly: isReadOnly,
-                                    },
-                                }}
-                                disabled={isReadOnly}
-                            />
-                            <TextField
-                                label="Model / Reference"
-                                variant="standard"
-                                value={model}
-                                onChange={(e) => setModel(e.target.value)}
-                                fullWidth
-                                id="model-input"
-                                name="productModel"
+                                id="size-input"
+                                name="productSize"
+                                helperText='Example: "100x45x12cm"'
+                                autoComplete="off"
                                 slotProps={{
                                     input: {
                                         readOnly: isReadOnly,
@@ -352,7 +358,27 @@ const UpdateProductForm = ({
                                 disabled={isReadOnly}
                             />
                         </Stack>
-
+                        <Box id="color-pick" display="flex" flex={1}>
+                            <ColorSelector
+                                onSelectedColor={handleSelectColor}
+                                selectedColor={color}
+                                disabled={isReadOnly}
+                            />
+                            {color && (
+                                <Chip
+                                    label={color}
+                                    sx={{
+                                        borderRadius: 999,
+                                        fontWeight: 500,
+                                        ml: 1,
+                                    }}
+                                    variant="outlined"
+                                    onDelete={() => setColor(null)}
+                                    deleteIcon={<ClearIcon />}
+                                    disabled={isReadOnly}
+                                />
+                            )}
+                        </Box>
                         <Box>
                             <InputLabel
                                 variant="standard"
@@ -371,7 +397,7 @@ const UpdateProductForm = ({
                                 onChange={handleChangeCondition}
                                 sx={{ maxWidth: "fit-content" }}
                             >
-                                {conditions.map((cond) => (
+                                {CONDITIONS.map((cond) => (
                                     <option key={cond} value={cond}>
                                         {capitalizeFirstLetter(
                                             cond.toLowerCase()
@@ -446,7 +472,7 @@ const UpdateProductForm = ({
                             variant="standard"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            helperText="Mention wear and tear, service history, playability, noise issues, and included accessories."
+                            helperText="Mention wear and tear, service history, playability, noise issues, and included accessories (case, cables, pedals, etc.)."
                             slotProps={{
                                 input: {
                                     readOnly: isReadOnly,
@@ -467,12 +493,20 @@ const UpdateProductForm = ({
                             >
                                 Price (€)
                             </InputLabel>
-
                             <PriceInput
                                 isDisabled={isReadOnly}
                                 handleSetPrice={setPrice}
                                 price={price}
                             />
+                            {submitted && requiredFieldErrors.price && (
+                                <Typography
+                                    variant="caption"
+                                    color="error"
+                                    sx={{ display: "block", mt: 0.5 }}
+                                >
+                                    {requiredFieldErrors.price}
+                                </Typography>
+                            )}
                             <Typography
                                 variant="caption"
                                 color="text.secondary"
@@ -685,6 +719,7 @@ const UpdateProductForm = ({
                                         setAccept(e.target.checked)
                                     }
                                     color="primary"
+                                    disabled={isReadOnly}
                                 />
                             }
                             label="I confirm that these details are accurate and accept the marketplace terms."
@@ -709,7 +744,7 @@ const UpdateProductForm = ({
                                 fullWidth
                                 variant="contained"
                                 color="primary"
-                                disabled={loading || !accept}
+                                disabled={isReadOnly || loading || !accept}
                                 sx={{
                                     maxWidth: 260,
                                     mt: 1,
