@@ -1,372 +1,479 @@
+import { useMutation, useQuery, gql } from "@apollo/client";
 import {
-    Avatar,
     Box,
     Button,
-    Container,
+    CircularProgress,
     Divider,
-    Grid,
-    IconButton,
     Paper,
     Stack,
-    TextField,
     Typography,
+    Alert,
 } from "@mui/material";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import DeleteIcon from "@mui/icons-material/Delete";
-import MusicNoteIcon from "@mui/icons-material/MusicNote";
-import EuroIcon from "@mui/icons-material/Euro";
-import AddIcon from "@mui/icons-material/Add";
-import RemoveIcon from "@mui/icons-material/Remove";
-import RouterLinkButton from "../../components/common/RouterLinkButton";
+import { useNavigate } from "react-router";
+import {
+    CANCEL_ALL_ORDERS,
+    CREATE_CHECKOUT,
+} from "../../library/graphql/mutations/orders";
 import { useCartContext } from "../../context/useAppContext";
-import type { CartItem } from "../../types/cart.type";
+import Toast from "../../components/common/Toast";
+import { useMemo, useState } from "react";
 
-const CartPage = () => {
-    const { cartItems, addItem, removeItem, clearCart } = useCartContext();
+const CART_PRODUCTS = gql`
+    query ProductsByIds($ids: [ID!]!) {
+        productsByIds(ids: $ids) {
+            id
+            name
+            unitPrice
+            currency
+            status
+            sellerProfile {
+                id
+                user {
+                    username
+                }
+            }
+            images {
+                url
+            }
+        }
+    }
+`;
 
-    const items: CartItem[] = cartItems ?? [];
+type CartPageProduct = {
+    id: string;
+    name: string;
+    unitPrice: number;
+    currency: string;
+    status: string;
+    sellerProfile: {
+        id: string;
+        user: { username: string };
+    };
+    images: {
+        url: string;
+    }[];
+};
 
-    const subtotal = items.reduce(
-        (acc, item) => acc + item.product.price * item.quantity,
-        0
+type ToastSeverity = "success" | "error" | "info" | "warning";
+
+export default function CartPage() {
+    const { cartItems, removeItem } = useCartContext();
+    const navigate = useNavigate();
+
+    const [openToast, setOpenToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState("");
+    const [toastSeverity, setToastSeverity] = useState<ToastSeverity>("info");
+
+    const itemsIds = useMemo(
+        () => cartItems.map((item) => item.product.id),
+        [cartItems],
     );
 
-    // to replace with reel fee operation from back
-    const fees = Math.round(subtotal * 0.05); // 5% service & payment fees
-    // const shippingEstimate = items.length > 0 ? 12 : 0; // flat estimate
-    const shippingEstimate = items.length > 0 ? 12 : 0; // flat estimate
-    const total = subtotal + fees + shippingEstimate;
+    const {
+        data,
+        loading: productsLoading,
+        error: productsError,
+    } = useQuery<{ productsByIds: CartPageProduct[] }>(CART_PRODUCTS, {
+        variables: { ids: itemsIds },
+        skip: itemsIds.length === 0,
+        fetchPolicy: "network-only", // avoid cache issues when product availability changes
+    });
 
+    const [createCheckout, { loading: checkoutLoading, error: checkoutError }] =
+        useMutation(CREATE_CHECKOUT);
+    const [cancelAllOrders] = useMutation(CANCEL_ALL_ORDERS);
+
+    const handleCancelAllOrders = async () => {
+        const allCancelled = await cancelAllOrders();
+        if (allCancelled?.data) {
+            console.log(allCancelled.data);
+        }
+    };
+
+    const products = useMemo(
+        () => data?.productsByIds ?? [],
+        [data?.productsByIds],
+    );
+
+    const totalAmount = useMemo(
+        () => products.reduce((sum, p) => sum + Number(p.unitPrice), 0),
+        [products],
+    );
+
+    const currency = products[0]?.currency ?? "EUR";
+
+    const unavailable = products.filter(
+        (p) => p.status && p.status !== "AVAILABLE",
+    );
+
+    const canCheckout = unavailable.length === 0 && products.length > 0;
+
+    const sellers = useMemo(() => {
+        return Array.from(
+            new Map(
+                products.map((p) => [p.sellerProfile.id, p.sellerProfile]),
+            ).values(),
+        );
+    }, [products]);
+
+    const productsBySeller = useMemo(() => {
+        return sellers.map((seller) => {
+            const sellerProducts = products.filter(
+                (p) => p.sellerProfile.id === seller.id,
+            );
+            const amountPerSeller = sellerProducts.reduce(
+                (sum, sp) => sum + Number(sp.unitPrice),
+                0,
+            );
+
+            return {
+                sellerId: seller.id,
+                sellerUsername: seller.user.username,
+                sellerProducts,
+                amountPerSeller,
+            };
+        });
+    }, [products, sellers]);
+
+    const handleCheckout = async () => {
+        try {
+            if (!canCheckout) {
+                setToastSeverity("warning");
+                setToastMessage("Some items are no longer available.");
+                setOpenToast(true);
+                return;
+            }
+
+            const response = await createCheckout({
+                variables: {
+                    productIds: itemsIds,
+                    fulfillmentMethod: "MEETUP",
+                },
+            });
+
+            setToastSeverity("success");
+            setToastMessage("Checkout created successfully.");
+            setOpenToast(true);
+
+            const { orders, paymentUrl, stripePublicKey, clientSecret } =
+                await response.data.createCheckout;
+
+            if (orders)
+                navigate("/account/confirm-checkout", {
+                    state: {
+                        orders,
+                        paymentUrl,
+                        stripePublicKey,
+                        clientSecret,
+                    },
+                });
+        } catch (err) {
+            console.log("Cart error:", err);
+            setToastSeverity("error");
+            setToastMessage("Something went wrong while placing orders.");
+            setOpenToast(true);
+        }
+    };
+
+    // const goToCreateCheckout = () => {
+    //     navigate("/account/create-checkout", {
+    //         state: { products },
+    //     });
+    // };
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-            {/* Header */}
-            <Box sx={{ mb: 3 }}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                    <ShoppingCartIcon color="primary" />
-                    <Typography variant="h4" fontWeight={600}>
-                        Your cart
-                    </Typography>
-                </Stack>
-                <Typography variant="body2" color="text.secondary">
-                    Review the instruments and music gear you are about to buy.
-                </Typography>
-            </Box>
+        <Box sx={{ maxWidth: 800, mx: "auto", p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+                Cart
+            </Typography>
 
-            {items.length === 0 && (
-                <Paper
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: 2,
+                    mb: 2,
+                }}
+            >
+                <Box
                     sx={{
-                        p: 3,
-                        borderRadius: 3,
-                        textAlign: "center",
+                        flexGrow: 1,
+                        p: 1.5,
+                        bgcolor: "background.default",
                         border: (theme) =>
                             `1px dashed ${theme.palette.divider}`,
+                        borderRadius: 2,
                     }}
                 >
-                    <Typography variant="h6" gutterBottom>
-                        Your cart is empty
-                    </Typography>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 2 }}
-                    >
-                        Browse guitars, synths, pedals and studio gear, then add
-                        them to your cart when you are ready.
+                    <Typography variant="subtitle2" gutterBottom>
+                        You have {cartItems.length} item(s) in your cart
                     </Typography>
 
-                    <RouterLinkButton
-                        variant="contained"
-                        startIcon={<MusicNoteIcon />}
-                        sx={{ borderRadius: 999 }}
-                        to={"/products"}
-                    >
-                        Browse instruments
-                    </RouterLinkButton>
-                </Paper>
+                    <Typography variant="body2">
+                        • Estimated amount <strong>{totalAmount}</strong>{" "}
+                        {currency}
+                    </Typography>
+
+                    {!canCheckout && unavailable.length > 0 && (
+                        <Alert severity="warning" sx={{ mt: 1 }}>
+                            Some items are no longer available. Please remove
+                            them before checkout.
+                        </Alert>
+                    )}
+                </Box>
+
+                <Button
+                    variant="contained"
+                    onClick={handleCheckout}
+                    // onClick={goToCreateCheckout}
+                    disabled={checkoutLoading || !canCheckout}
+                >
+                    {checkoutLoading ? "Processing..." : "Checkout"}
+                </Button>
+
+                <Button variant="contained" onClick={handleCancelAllOrders}>
+                    Cancel all
+                </Button>
+            </Box>
+
+            <Toast
+                onOpen={openToast}
+                onClose={() => setOpenToast(false)}
+                message={toastMessage}
+                severity={toastSeverity}
+            />
+
+            {productsLoading && (
+                <Box
+                    sx={{
+                        minHeight: 200,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}
+                >
+                    <CircularProgress />
+                </Box>
             )}
 
-            {items.length > 0 && (
-                <Grid container spacing={3}>
-                    <Grid size={{ xs: 12, md: 8 }}>
-                        <Stack spacing={2.5}>
-                            {items.map((item) => {
-                                const product = item.product;
-                                const imgUrl = product.images?.[0]?.url;
+            {productsError && (
+                <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+                    {productsError.message}
+                </Typography>
+            )}
 
-                                return (
-                                    <Paper
-                                        key={product.id}
-                                        elevation={1}
-                                        sx={{
-                                            p: 2,
-                                            borderRadius: 3,
-                                            display: "flex",
-                                            gap: 2,
-                                            alignItems: "flex-start",
-                                        }}
-                                    >
-                                        <Avatar
-                                            variant="rounded"
-                                            src={imgUrl}
-                                            sx={{
-                                                width: 80,
-                                                height: 80,
-                                                borderRadius: 2,
-                                                flexShrink: 0,
-                                            }}
-                                        >
-                                            <MusicNoteIcon />
-                                        </Avatar>
+            {!productsLoading && !productsError && (
+                <Stack spacing={1}>
+                    <Paper sx={{ p: 1.5 }} variant="outlined">
+                        {products.length === 0 ? (
+                            <Box sx={{ py: 6, textAlign: "center" }}>
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                >
+                                    Your cart is currently empty.
+                                </Typography>
 
-                                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                                            <Typography
-                                                variant="subtitle1"
-                                                fontWeight={600}
-                                                noWrap
-                                            >
-                                                {product.name}
-                                            </Typography>
-                                            {product.sellerProfile && (
-                                                <Typography
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                >
-                                                    Seller:{" "}
-                                                    {
-                                                        product.sellerProfile
-                                                            .user.username
-                                                    }
-                                                </Typography>
-                                            )}
+                                <Button
+                                    sx={{ mt: 3 }}
+                                    variant="contained"
+                                    onClick={() => navigate("/products")}
+                                >
+                                    Continue shopping
+                                </Button>
+                            </Box>
+                        ) : (
+                            productsBySeller.map((pbs) => (
+                                <Box key={pbs.sellerId} sx={{ p: 1.5 }}>
+                                    <Typography variant="subtitle1">
+                                        Seller: {pbs.sellerUsername}
+                                    </Typography>
+                                    <Typography variant="caption">
+                                        Estimated amount: {pbs.amountPerSeller}{" "}
+                                        {currency}
+                                    </Typography>
 
-                                            <Stack
-                                                direction="row"
-                                                spacing={1}
-                                                alignItems="center"
-                                                sx={{ mt: 1 }}
-                                            >
-                                                <EuroIcon
-                                                    fontSize="small"
-                                                    color="action"
-                                                />
-                                                <Typography variant="body2">
-                                                    {product.price.toFixed(2)} €
-                                                </Typography>
-                                            </Stack>
-                                        </Box>
-
-                                        <Stack
-                                            spacing={1}
-                                            alignItems="flex-end"
-                                            sx={{ minWidth: 140 }}
-                                        >
-                                            <Stack
-                                                direction="row"
-                                                spacing={1}
-                                                alignItems="center"
-                                            >
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() =>
-                                                        removeItem?.(
-                                                            item.product.id
-                                                        )
-                                                    }
-                                                    sx={{
-                                                        bgcolor: "action.hover",
-                                                        "&:hover": {
-                                                            bgcolor:
-                                                                "action.selected",
-                                                        },
-                                                    }}
-                                                >
-                                                    <RemoveIcon fontSize="small" />
-                                                </IconButton>
-                                                <TextField
-                                                    type="number"
-                                                    size="small"
-                                                    value={item.quantity}
-                                                    inputProps={{
-                                                        min: 1,
-                                                        style: {
-                                                            textAlign: "center",
-                                                            width: 50,
-                                                        },
-                                                    }}
-                                                    onChange={() => {
-                                                        addItem?.(product);
-                                                    }}
-                                                />
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() =>
-                                                        addItem?.(item.product)
-                                                    }
-                                                    sx={{
-                                                        bgcolor: "action.hover",
-                                                        "&:hover": {
-                                                            bgcolor:
-                                                                "action.selected",
-                                                        },
-                                                    }}
-                                                >
-                                                    <AddIcon fontSize="small" />
-                                                </IconButton>
-                                            </Stack>
-
-                                            <Typography
-                                                variant="subtitle2"
-                                                fontWeight={600}
-                                            >
-                                                {(
-                                                    product.price *
-                                                    item.quantity
-                                                ).toFixed(2)}{" "}
-                                                €
+                                    {pbs.sellerProducts.map((p, idx) => (
+                                        <Box key={p.id} sx={{ pt: 1.5 }}>
+                                            <Typography>
+                                                {p.name} — {p.unitPrice}{" "}
+                                                {p.currency}{" "}
+                                                {p.status !== "AVAILABLE"
+                                                    ? `(${p.status})`
+                                                    : ""}
                                             </Typography>
 
                                             <Button
                                                 size="small"
-                                                color="error"
-                                                startIcon={<DeleteIcon />}
-                                                onClick={() =>
-                                                    removeItem?.(product.id)
-                                                }
+                                                onClick={() => removeItem(p.id)}
                                             >
                                                 Remove
                                             </Button>
-                                        </Stack>
-                                    </Paper>
-                                );
-                            })}
 
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                }}
-                            >
-                                <Button
-                                    size="small"
-                                    color="error"
-                                    variant="outlined"
-                                    startIcon={<DeleteIcon />}
-                                    onClick={clearCart}
-                                >
-                                    Clear cart
-                                </Button>
-                            </Box>
-                        </Stack>
-                    </Grid>
+                                            {idx !==
+                                                pbs.sellerProducts.length -
+                                                    1 && (
+                                                <Divider sx={{ my: 2 }} />
+                                            )}
+                                        </Box>
+                                    ))}
 
-                    <Grid size={{ xs: 12, md: 4 }}>
-                        <Paper
-                            elevation={2}
-                            sx={{
-                                p: 3,
-                                borderRadius: 3,
-                                position: { md: "sticky" },
-                                top: { md: 88 },
-                            }}
-                        >
-                            <Typography
-                                variant="h6"
-                                fontWeight={600}
-                                sx={{ mb: 2 }}
-                            >
-                                Order summary
-                            </Typography>
-
-                            <Stack spacing={1.5} sx={{ mb: 2 }}>
-                                <SummaryRow
-                                    label="Items subtotal"
-                                    value={`${subtotal.toFixed(2)} €`}
-                                />
-                                <SummaryRow
-                                    label="Service & payment fees"
-                                    value={`${fees.toFixed(2)} €`}
-                                />
-                                <SummaryRow
-                                    label="Estimated shipping"
-                                    value={
-                                        shippingEstimate > 0
-                                            ? `${shippingEstimate.toFixed(2)} €`
-                                            : "-"
-                                    }
-                                />
-                            </Stack>
-
-                            <Divider sx={{ my: 1.5 }} />
-
-                            <SummaryRow
-                                label="Total"
-                                value={`${total.toFixed(2)} €`}
-                                strong
-                            />
-
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ display: "block", mt: 1.5 }}
-                            >
-                                Final shipping cost and taxes may vary depending
-                                on the seller's location and your delivery
-                                address.
-                            </Typography>
-
-                            <RouterLinkButton
-                                variant="contained"
-                                color="primary"
-                                fullWidth
-                                sx={{ mt: 3, borderRadius: 999 }}
-                                to={"/checkout"}
-                            >
-                                Go to checkout
-                            </RouterLinkButton>
-
-                            <RouterLinkButton
-                                variant="text"
-                                fullWidth
-                                sx={{ mt: 1 }}
-                                to={"/products"}
-                            >
-                                Continue browsing
-                            </RouterLinkButton>
-                        </Paper>
-                    </Grid>
-                </Grid>
+                                    <Divider sx={{ my: 2 }} />
+                                </Box>
+                            ))
+                        )}
+                    </Paper>
+                </Stack>
             )}
-        </Container>
+
+            {checkoutError && (
+                <Typography
+                    color="error"
+                    variant="caption"
+                    sx={{ mt: 2, display: "block" }}
+                >
+                    {checkoutError.message}
+                </Typography>
+            )}
+        </Box>
     );
-};
 
-type SummaryRowProps = {
-    label: string;
-    value: string;
-    strong?: boolean;
-};
+    // return (
+    //     <Box sx={{ maxWidth: 800, mx: "auto", p: 2 }}>
+    //         <Typography variant="h6" gutterBottom>
+    //             Cart
+    //         </Typography>
 
-const SummaryRow = ({ label, value, strong }: SummaryRowProps) => {
-    return (
-        <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-        >
-            <Typography
-                variant="body2"
-                color={strong ? "text.primary" : "text.secondary"}
-            >
-                {label}
-            </Typography>
-            <Typography
-                variant={strong ? "subtitle1" : "body2"}
-                fontWeight={strong ? 600 : 400}
-            >
-                {value}
-            </Typography>
-        </Stack>
-    );
-};
+    //         <Box
+    //             sx={{
+    //                 display: "flex",
+    //                 justifyContent: "space-between",
+    //                 alignItems: "flex-start",
+    //                 gap: 2,
+    //                 mb: 2,
+    //             }}
+    //         >
+    //             <Box
+    //                 sx={{
+    //                     flexGrow: 1,
+    //                     p: 1.5,
+    //                     bgcolor: "background.default",
+    //                     border: (theme) =>
+    //                         `1px dashed ${theme.palette.divider}`,
+    //                     borderRadius: 2,
+    //                 }}
+    //             >
+    //                 <Typography variant="subtitle2" gutterBottom>
+    //                     You have {products.length} item(s) in your cart
+    //                 </Typography>
 
-export default CartPage;
+    //                 <Typography variant="body2">
+    //                     • Estimated amount <strong>{totalAmount}</strong>{" "}
+    //                     {currency}
+    //                 </Typography>
+
+    //                 {!canCheckout && unavailable.length > 0 && (
+    //                     <Alert severity="warning" sx={{ mt: 1 }}>
+    //                         Some items are no longer available. Please remove
+    //                         them before checkout.
+    //                     </Alert>
+    //                 )}
+    //             </Box>
+    //             <Button
+    //                 variant="contained"
+    //                 onClick={handleCheckout}
+    //                 disabled={checkoutLoading || !canCheckout}
+    //             >
+    //                 {checkoutLoading
+    //                     ? "Processing..."
+    //                     : sellers.length > 1
+    //                     ? "Confirm orders (createCheckout)"
+    //                     : "Confirm order (createCheckout)"}
+    //             </Button>
+    //             <Button
+    //                 variant="contained"
+    //                 onClick={handleCancelAllOrders}
+    //                 // disabled={checkoutLoading || !canCheckout}
+    //             >
+    //                 Cancel all
+    //             </Button>
+    //         </Box>
+
+    //         <Toast
+    //             onOpen={openToast}
+    //             onClose={() => setOpenToast(false)}
+    //             message={toastMessage}
+    //             severity={toastSeverity}
+    //         />
+
+    //         {productsLoading && (
+    //             <Box
+    //                 sx={{
+    //                     minHeight: 200,
+    //                     display: "flex",
+    //                     alignItems: "center",
+    //                     justifyContent: "center",
+    //                 }}
+    //             >
+    //                 <CircularProgress />
+    //             </Box>
+    //         )}
+
+    //         {productsError && (
+    //             <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+    //                 {productsError.message}
+    //             </Typography>
+    //         )}
+
+    //         <Stack spacing={1}>
+    //             <Paper sx={{ p: 1.5 }} variant="outlined">
+    //                 {productsBySeller.map((pbs) => (
+    //                     <Box key={pbs.sellerId} sx={{ p: 1.5 }}>
+    //                         <Typography variant="subtitle1">
+    //                             Seller: {pbs.sellerUsername}
+    //                         </Typography>
+    //                         <Typography variant="caption">
+    //                             Estimated amount: {pbs.amountPerSeller}{" "}
+    //                             {currency}
+    //                         </Typography>
+
+    //                         {pbs.sellerProducts.map((p, idx) => (
+    //                             <Box key={p.id} sx={{ pt: 1.5 }}>
+    //                                 <Typography>
+    //                                     {p.name} — {p.unitPrice} {p.currency}{" "}
+    //                                     {p.status !== "AVAILABLE"
+    //                                         ? `(${p.status})`
+    //                                         : ""}
+    //                                 </Typography>
+
+    //                                 <Button
+    //                                     size="small"
+    //                                     onClick={() => removeItem(p.id)}
+    //                                 >
+    //                                     Remove
+    //                                 </Button>
+
+    //                                 {idx !== pbs.sellerProducts.length - 1 && (
+    //                                     <Divider sx={{ my: 2 }} />
+    //                                 )}
+    //                             </Box>
+    //                         ))}
+
+    //                         <Divider sx={{ my: 2 }} />
+    //                     </Box>
+    //                 ))}
+    //             </Paper>
+    //         </Stack>
+
+    //         {checkoutError && (
+    //             <Typography
+    //                 color="error"
+    //                 variant="caption"
+    //                 sx={{ mt: 2, display: "block" }}
+    //             >
+    //                 {checkoutError.message}
+    //             </Typography>
+    //         )}
+    //     </Box>
+    // );
+}

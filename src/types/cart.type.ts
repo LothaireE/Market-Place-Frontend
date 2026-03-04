@@ -1,7 +1,7 @@
 export type CartProduct = {
     id: string;
     name: string;
-    price: number;
+    unitPrice: number;
     images?: { url: string }[];
     sellerProfile?: {
         user: {

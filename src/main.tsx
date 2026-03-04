@@ -26,6 +26,9 @@ import SellerLayout from "./pages/seller/SellerLayout.tsx";
 import SellerProductEditPage from "./pages/seller/SellerProductEditPage.tsx";
 import ProductListPage from "./pages/products/ProductListPage.tsx";
 import ProductDetailPage from "./pages/products/ProductDetailPage.tsx";
+import CheckoutPage from "./pages/account/CheckoutPage.tsx";
+import SellerOnBordingPage from "./pages/seller/SellerOnBordingPage.tsx";
+import ConfirmPaymentPage from "./pages/account/ConfirmPaymentPage.tsx";
 
 const router = createBrowserRouter([
     {
@@ -42,6 +45,7 @@ const router = createBrowserRouter([
 
             { path: "/about", element: <About /> },
             { path: "/authenticate", element: <Authenticate /> },
+            { path: "/onboarding", element: <SellerOnBordingPage /> },
             {
                 path: "/account",
                 element: (
@@ -54,6 +58,11 @@ const router = createBrowserRouter([
                     { path: "orders", element: <OrdersPage /> },
                     { path: "favorites", element: <FavoritesPage /> },
                     { path: "cart", element: <CartPage /> },
+                    {
+                        path: "confirm-checkout",
+                        element: <ConfirmPaymentPage />,
+                    },
+                    { path: "checkout", element: <CheckoutPage /> },
                 ],
             },
             {
@@ -93,5 +102,5 @@ createRoot(document.getElementById("root")!).render(
         <ApolloProvider client={graphqlClient}>
             <RouterProvider router={router} />
         </ApolloProvider>
-    </StrictMode>
+    </StrictMode>,
 );

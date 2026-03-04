@@ -45,6 +45,17 @@ const HeaderUserSection = ({ onSetMobileOpen }: HeaderUserSectionProps) => {
         }
         handleCloseUserMenu();
     };
+
+    const handleCartClick = () => {
+        if (!isAuthenticated) {
+            navigate("/authenticate", {
+                state: { redirectTo: "/account/cart" },
+            });
+            return;
+        }
+        navigate("/account/cart");
+    };
+
     return (
         <Box
             sx={{
@@ -69,10 +80,9 @@ const HeaderUserSection = ({ onSetMobileOpen }: HeaderUserSectionProps) => {
             )}
 
             {/* Cart icon */}
-            {/* <CartIcon handleClick={onCartClick} count={cartCount} /> */}
             <CartIcon
-                handleClick={() => navigate("/account/cart")}
-                count={totalQuantity}
+                handleClick={handleCartClick}
+                count={isAuthenticated ? totalQuantity : 0}
             />
 
             {/* Avatar + menu */}

@@ -6,7 +6,7 @@ export const GET_FAVORITES = gql`
             product {
                 id
                 name
-                price
+                unitPrice
                 condition
                 images {
                     name

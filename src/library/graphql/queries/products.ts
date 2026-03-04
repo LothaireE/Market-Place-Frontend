@@ -34,7 +34,7 @@ export const GET_PRODUCT_BY_ID = gql`
             id
             name
             description
-            price
+            unitPrice
             condition
             # imagesUrl
             sellerProfile {
@@ -76,7 +76,8 @@ export const GET_PRODUCTS_HOMEPAGE = gql`
                     url
                     width
                 }
-                price
+                unitPrice
+                status
                 sellerProfile {
                     user {
                         username
@@ -103,7 +104,7 @@ export const GET_SELLER_PRODUCTS = gql`
                 url
                 name
             }
-            price
+            unitPrice
             size
             updatedAt
         }
@@ -132,7 +133,7 @@ export const SEARCH_PRODUCT_BY_NAME = gql`
                     format
                     name
                 }
-                price
+                unitPrice
                 sellerProfile {
                     user {
                         id
@@ -168,7 +169,8 @@ export const GET_PRODUCTS_LIST_PAGE = gql`
                     format
                     name
                 }
-                price
+                unitPrice
+                status
                 sellerProfile {
                     user {
                         id

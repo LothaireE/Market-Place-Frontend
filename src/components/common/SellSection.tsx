@@ -1,7 +1,6 @@
 import { Box, Container, Typography, Button, Grid, Stack } from "@mui/material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import { useAuthContext } from "../../context/useAppContext";
-import { useNavigate } from "react-router";
+import useOnBoardNavigate from "../../hooks/onBoardNavigate";
 
 export const StepLine = ({
     number,
@@ -31,13 +30,12 @@ export const StepLine = ({
 );
 
 const SellSection = () => {
-    const navigate = useNavigate();
-    const { isAuthenticated } = useAuthContext();
+    const onBoardNavigate = useOnBoardNavigate();
 
-    const handleCick = () => {
-        if (isAuthenticated) navigate("/seller/new");
-        else navigate("/authenticate");
+    const handleClick = () => {
+        onBoardNavigate("seller/new");
     };
+
     return (
         <Box
             sx={{
@@ -67,7 +65,7 @@ const SellSection = () => {
                             size="large"
                             startIcon={<AddCircleOutlineIcon />}
                             sx={{ borderRadius: 999 }}
-                            onClick={handleCick}
+                            onClick={handleClick}
                         >
                             Sell a product
                         </Button>

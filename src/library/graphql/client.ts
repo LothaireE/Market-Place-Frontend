@@ -22,7 +22,21 @@ const authLink = setContext((_, { headers }) => {
     };
 });
 
+// export const graphqlClient = new ApolloClient({
+//     link: authLink.concat(httpLink),
+//     cache: new InMemoryCache(),
+// });
+
 export const graphqlClient = new ApolloClient({
     link: authLink.concat(httpLink),
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+        typePolicies: {
+            Query: {
+                fields: {
+                    me: { merge: false },
+                    sellerProfile: { merge: false },
+                },
+            },
+        },
+    }),
 });

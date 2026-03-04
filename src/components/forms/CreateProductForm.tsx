@@ -181,7 +181,7 @@ const CreateProductForm = ({
                 formData.append("categoryIds", cat.id)
             );
             formData.append("name", productName);
-            formData.append("price", String(price));
+            formData.append("unitPrice", String(price));
             formData.append("condition", condition);
             formData.append("description", description);
             if (size) formData.append("size", size);

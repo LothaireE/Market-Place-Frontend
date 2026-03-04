@@ -24,7 +24,7 @@ const GET_PRODUCT_BY_ID = gql`
             id
             name
             description
-            price
+            unitPrice
             condition
             sellerProfile {
                 user {
@@ -178,7 +178,7 @@ const SellerProductDetailPage = () => {
                         </Typography>
                         <Stack direction="row" spacing={1} alignItems="center">
                             <Typography variant="h5" fontWeight={700}>
-                                {product.price} €
+                                {product.unitPrice} €
                             </Typography>
                             <Chip
                                 label={displayCondition}
@@ -224,7 +224,8 @@ const SellerProductDetailPage = () => {
                                     {displayCondition}
                                 </Typography>
                                 <Typography variant="body2">
-                                    <strong>Price:</strong> {product.price} €
+                                    <strong>Price:</strong> {product.unitPrice}{" "}
+                                    €
                                 </Typography>
                                 <Typography variant="body2">
                                     <strong>Seller:</strong>{" "}

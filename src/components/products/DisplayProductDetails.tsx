@@ -23,6 +23,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ShieldIcon from "@mui/icons-material/Shield";
 import { useState } from "react";
 import ShoppingBasketIcon from "@mui/icons-material/ShoppingBasket";
+import { handleDateFormat } from "../../utils/textFormat";
 
 const DetailRow = ({
     label,
@@ -74,13 +75,7 @@ const DisplayProductDetails = (product: ProductDetail) => {
     // TODO this is also ugly and needs a proper fix
     const mainImageUrl = selectedImage || product?.images?.[0]?.url || null;
 
-    const createdAtToFormat = new Date(
-        product?.createdAt || ""
-    ).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-    });
+    const createdAtToFormat = handleDateFormat(product?.createdAt ?? "");
 
     const flatCategories = product.categories?.length
         ? product.categories?.map((cat) => cat.name).join(", ")
@@ -175,7 +170,7 @@ const DisplayProductDetails = (product: ProductDetail) => {
                             <Chip
                                 size="small"
                                 // icon={<EuroIcon />}
-                                label={`${product.price} €`}
+                                label={`${product.unitPrice} €`}
                                 color="primary"
                                 variant="filled"
                             />
@@ -225,7 +220,7 @@ const DisplayProductDetails = (product: ProductDetail) => {
                             fontWeight={700}
                             sx={{ mb: 1 }}
                         >
-                            {product.price} €
+                            {product.unitPrice} €
                         </Typography>
                         <Typography
                             variant="body2"

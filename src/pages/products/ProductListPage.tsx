@@ -44,6 +44,7 @@ import {
     type FilterUpdate,
 } from "../../utils/applyNewSearchParams";
 import { useDebouncedRange } from "../../hooks/useDebouncedRange";
+import useOnBoardNavigate from "../../hooks/onBoardNavigate";
 
 const pagination = {
     page: null,
@@ -60,6 +61,7 @@ export type PaginationInput = {
 };
 
 export type ProductFilterInput = {
+    ids?: string[] | null;
     search?: string;
     category?: string;
     condition?: [ProductCondition] | null;
@@ -70,10 +72,11 @@ export type ProductFilterInput = {
 type Product = {
     id: string;
     name: string;
-    price: number;
+    unitPrice: number;
     condition: ProductCondition;
     categories?: [Category];
     images: ProductImage[];
+    status: string;
     sellerProfile: {
         user: { username: string };
     };
@@ -124,6 +127,12 @@ const ProductList = () => {
 
     const navigate = useNavigate();
 
+    const onBoardNavigate = useOnBoardNavigate();
+
+    const handleStartSellingClick = () => {
+        onBoardNavigate("/seller/new");
+    };
+
     // const setFilterParams = (filter: FilterUpdate) => {
     //     setSearchParams((prev) => applyNewSearchParams(prev, filter));
     // };
@@ -171,7 +180,6 @@ const ProductList = () => {
             conditionArray && conditionArray.length > 0 ? conditionArray : null,
     } as ProductFilterInput;
 
-    console.log("paramsfilter :", paramsfilter);
     const { data, loading, error } = useQuery<ProductsResponse>(
         GET_PRODUCTS_LIST_PAGE,
         {
@@ -237,7 +245,6 @@ const ProductList = () => {
 
     const handleSearchSubmit = (event: React.FormEvent) => {
         // TODO handle search submit that renders the results of said search in grid
-        console.log("event ", event.currentTarget);
         event.preventDefault();
         setSearchInputValue("");
         setSearchResult([]);
@@ -283,8 +290,6 @@ const ProductList = () => {
         setSearchResult([]);
         setFilterParams({ search: "" });
     };
-
-    console.log("selectedConditions :", selectedConditions);
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -422,7 +427,8 @@ const ProductList = () => {
                             size="small"
                             variant="outlined"
                             fullWidth
-                            onClick={() => navigate("/seller/new")}
+                            // onClick={() => navigate("/seller/new")}
+                            onClick={handleStartSellingClick}
                         >
                             Start selling
                         </Button>

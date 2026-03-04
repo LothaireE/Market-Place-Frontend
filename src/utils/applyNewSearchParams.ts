@@ -23,12 +23,6 @@ export const applyNewSearchParams = (
         else updatedParams.set(key, value);
     };
 
-    console.log(
-        "Applying new search params price:",
-        newFilters.minPrice,
-        newFilters.maxPrice
-    );
-
     setOrDeleteParam("category", newFilters.category ?? undefined);
     setOrDeleteParam("search", newFilters.search ?? undefined);
     setOrDeleteParam("sort", newFilters.sort ?? undefined);
@@ -43,8 +37,6 @@ export const applyNewSearchParams = (
             updatedParams.set("page", String(newFilters.page));
         }
     }
-
-    console.log("Updated search params:", updatedParams.toString());
 
     return updatedParams;
 };

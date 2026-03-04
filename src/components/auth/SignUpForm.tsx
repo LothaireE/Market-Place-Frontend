@@ -87,86 +87,75 @@ const SignUpForm = ({ onSuccess }: SignUpFormProps) => {
         }
     };
     return (
-        <div>
-            SignUpForm
-            <Box
-                component="form"
-                noValidate
-                sx={{ mt: 1 }}
-                onSubmit={handleSubmit}
-            >
-                <Stack spacing={2}>
-                    <TextField
-                        label="Username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        fullWidth
-                        required
-                    />
-                    <TextField
-                        label="Email"
-                        required
-                        fullWidth
-                        id="register-email"
-                        name="email"
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
-                    <PasswordField
-                        label="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <PasswordField
-                        label="Confirm password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={accept}
-                                onChange={(e) => setAccept(e.target.checked)}
-                                color="primary"
-                            />
-                        }
-                        label="Accept terms and conditions"
-                    />
-                    {error && <Typography color="error">{error}</Typography>}
-                    {info && <Typography color="primary">{info}</Typography>}
-                    <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        color="primary"
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <>
-                                <CircularProgress size={20} sx={{ mr: 1 }} />{" "}
-                                Registration...
-                            </>
-                        ) : (
-                            "Registration"
-                        )}
-                    </Button>
-                    <Typography
-                        variant="body2"
-                        color="textSecondary"
-                        align="center"
-                    >
-                        Already have an account?
-                        <LinkButton
-                            style={{ textTransform: "none" }}
-                            to="/login"
-                        >
-                            Log in
-                        </LinkButton>
-                    </Typography>
-                </Stack>
-            </Box>
-        </div>
+        <Box component="form" noValidate sx={{ mt: 1 }} onSubmit={handleSubmit}>
+            <Stack spacing={2}>
+                <TextField
+                    label="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    fullWidth
+                    required
+                />
+                <TextField
+                    label="Email"
+                    required
+                    fullWidth
+                    id="register-email"
+                    name="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+                <PasswordField
+                    label="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+                <PasswordField
+                    label="Confirm password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={accept}
+                            onChange={(e) => setAccept(e.target.checked)}
+                            color="primary"
+                        />
+                    }
+                    label="Accept terms and conditions"
+                />
+                {error && <Typography color="error">{error}</Typography>}
+                {info && <Typography color="primary">{info}</Typography>}
+                <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    color="primary"
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <>
+                            <CircularProgress size={20} sx={{ mr: 1 }} />{" "}
+                            Registration...
+                        </>
+                    ) : (
+                        "Registration"
+                    )}
+                </Button>
+                <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    align="center"
+                >
+                    Already have an account?
+                    <LinkButton style={{ textTransform: "none" }} to="/login">
+                        Log in
+                    </LinkButton>
+                </Typography>
+            </Stack>
+        </Box>
     );
 };
 

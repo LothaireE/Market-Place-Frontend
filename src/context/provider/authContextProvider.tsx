@@ -3,7 +3,7 @@ import { API_URLS } from "../../config/env";
 import AuthContext, { type ThemeMode } from "../authContext";
 import { ThemeProvider, createTheme } from "@mui/material";
 import { appTheme, appThemeDark } from "../../theme/appTheme";
-import { AUTH_ACCESS_TOKEN } from "../../library/graphql/client";
+import { AUTH_ACCESS_TOKEN, graphqlClient } from "../../library/graphql/client";
 
 // import { AUTH_ACCESS_TOKEN, setApolloAuthTokenGetter } from "../library/graphql/client";
 
@@ -38,7 +38,7 @@ export default function AuthContextProvider({
     >("loading");
     const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
         const savedTheme = localStorage.getItem(
-            "theme-mode"
+            "theme-mode",
         ) as ThemeMode | null;
         return savedTheme ?? "lightMode";
     });
@@ -79,25 +79,6 @@ export default function AuthContextProvider({
         if (accessToken) localStorage.setItem(AUTH_ACCESS_TOKEN, accessToken);
     }, [accessToken]);
 
-    async function logout() {
-        await fetch(API_URLS.userLogout, {
-            method: "POST",
-            credentials: "include",
-        });
-        setAuthStatus("unauthenticated");
-        setAccessToken(null);
-        setUser(null);
-        localStorage.removeItem(AUTH_ACCESS_TOKEN);
-    }
-
-    const theme = useMemo(
-        () => createTheme(themeMode === "darkMode" ? appThemeDark : appTheme),
-        [themeMode]
-    );
-
-    const toggleTheme = () =>
-        setThemeMode((m) => (m === "lightMode" ? "darkMode" : "lightMode"));
-
     async function login({
         email,
         password,
@@ -106,6 +87,7 @@ export default function AuthContextProvider({
         setError(null);
         setLoading(true);
         setAuthStatus("loading");
+
         try {
             const response = await fetch(API_URLS.userLogin, {
                 method: "POST",
@@ -122,9 +104,21 @@ export default function AuthContextProvider({
 
             const { data } = await response.json();
 
+            // setUser(data.user ?? null);
+
+            // setAccessToken(data.accessToken ?? null);
+            // localStorage.setItem(AUTH_ACCESS_TOKEN, data.accessToken);
+            const newAccessToken = data.accessToken ?? null;
+
             setUser(data.user ?? null);
-            setAccessToken(data.accessToken ?? null);
-            localStorage.setItem(AUTH_ACCESS_TOKEN, data.accessToken);
+            setAccessToken(newAccessToken);
+
+            if (newAccessToken)
+                localStorage.setItem(AUTH_ACCESS_TOKEN, newAccessToken);
+            else localStorage.removeItem(AUTH_ACCESS_TOKEN);
+
+            await graphqlClient.resetStore();
+
             setAuthStatus("authenticated");
 
             return data as SuccessData;
@@ -135,7 +129,7 @@ export default function AuthContextProvider({
                 throw err;
             } else {
                 const unknownError = new Error(
-                    "An error occurred during sign in."
+                    "An error occurred during sign in.",
                 );
                 setError(unknownError.message);
                 throw unknownError;
@@ -144,6 +138,26 @@ export default function AuthContextProvider({
             setLoading(false);
         }
     }
+
+    async function logout() {
+        await fetch(API_URLS.userLogout, {
+            method: "POST",
+            credentials: "include",
+        });
+        setAuthStatus("unauthenticated");
+        setAccessToken(null);
+        setUser(null);
+        localStorage.removeItem(AUTH_ACCESS_TOKEN);
+        await graphqlClient.clearStore();
+    }
+
+    const theme = useMemo(
+        () => createTheme(themeMode === "darkMode" ? appThemeDark : appTheme),
+        [themeMode],
+    );
+
+    const toggleTheme = () =>
+        setThemeMode((m) => (m === "lightMode" ? "darkMode" : "lightMode"));
 
     const isAuthenticated = authStatus === "authenticated";
 

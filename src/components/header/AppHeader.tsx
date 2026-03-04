@@ -26,6 +26,7 @@ import type { Product } from "../../types/product.type";
 import { SEARCH_PRODUCT_BY_NAME } from "../../library/graphql/queries/products";
 import { useOutsideClick } from "../../hooks/useOutsideClick";
 import SearchDropDownSelector from "./search/SearchDropDownSelector";
+import useOnBoardNavigate from "../../hooks/onBoardNavigate";
 
 type LoadProductByNameType = {
     products: { items: Product[] };
@@ -39,6 +40,9 @@ const mainNavLinks = MAIN_NAV_LINKS;
 const AppHeader = () => {
     const { isAuthenticated } = useAuthContext();
     const navigate = useNavigate();
+    const onBoardNavigate = useOnBoardNavigate();
+
+    const handleClick = () => onBoardNavigate("seller/new");
 
     const wrapperRef = useRef<HTMLDivElement | null>(null);
     const searchbarClick = useOutsideClick(wrapperRef);
@@ -69,7 +73,7 @@ const AppHeader = () => {
     }, [searchData]);
 
     const handleToggleMobileDrawer = (
-        value: "open" | "close" | "toggle" = "toggle"
+        value: "open" | "close" | "toggle" = "toggle",
     ) => {
         if (value === "open") return setMobileOpen(true);
         if (value === "close") return setMobileOpen(false);
@@ -196,7 +200,7 @@ const AppHeader = () => {
                                                 sx={{ fontSize: 16 }}
                                             />
                                         }
-                                        onClick={() => navigate("/seller")}
+                                        onClick={handleClick}
                                         sx={{ alignSelf: "center" }}
                                     />
                                 )}

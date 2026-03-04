@@ -12,10 +12,9 @@ import {
     Paper,
     Typography,
     Button,
-    IconButton,
     CircularProgress,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import GoBackButton from "../../components/common/GoBackButton";
 
 const GET_PRODUCT_BY_ID = gql`
     query Product($id: ID!) {
@@ -23,7 +22,7 @@ const GET_PRODUCT_BY_ID = gql`
             id
             name
             description
-            price
+            unitPrice
             condition
             categories {
                 name
@@ -49,7 +48,7 @@ export type ProductDetail = {
     id: string;
     name: string;
     description?: string | null;
-    price: number;
+    unitPrice: number;
     condition: ProductCondition;
     categories?: [Category] | null;
     createdAt: string | null;
@@ -81,14 +80,10 @@ const ProductDetailPage = () => {
         {
             variables: { id },
             // skip: !id,
-        }
+        },
     );
 
     const product = data?.product || null;
-
-    const handleGoBack = () => {
-        navigate(-1);
-    };
 
     if (loading) {
         return (
@@ -110,13 +105,7 @@ const ProductDetailPage = () => {
     if (error || !product) {
         return (
             <Container maxWidth="md" sx={{ py: 4 }}>
-                <Button
-                    startIcon={<ArrowBackIcon />}
-                    onClick={handleGoBack}
-                    sx={{ mb: 2 }}
-                >
-                    Back
-                </Button>
+                <GoBackButton />
                 <Paper
                     sx={{
                         p: 3,
@@ -149,12 +138,7 @@ const ProductDetailPage = () => {
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
             <Box sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                <IconButton onClick={handleGoBack}>
-                    <ArrowBackIcon />
-                </IconButton>
-                <Typography variant="body2" color="text.secondary">
-                    Back to listings
-                </Typography>
+                <GoBackButton />
             </Box>
 
             <DisplayProductDetails {...product} />

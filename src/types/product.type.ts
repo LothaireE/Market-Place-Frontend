@@ -26,7 +26,7 @@ export type Product = {
     description?: string;
     images: ProductImage[];
     name: string;
-    price: number;
+    unitPrice: number;
     sellerProfile: SellerProfile;
     size?: string;
     updatedAt?: string;
@@ -37,7 +37,7 @@ export type FavoriteProduct = {
     product: {
         id: string;
         name: string;
-        price: number;
+        unitPrice: number;
         condition: ProductCondition;
         sellerProfile: {
             user: {

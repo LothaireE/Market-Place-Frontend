@@ -23,7 +23,7 @@ type ProductUpdateQueryResponse = {
         name: string;
         condition: ProductCondition;
         description: string;
-        price: number;
+        unitPrice: number;
         sellerProfile: {
             user: {
                 username: string;

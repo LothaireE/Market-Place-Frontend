@@ -11,40 +11,33 @@ export default function SellerContextProvider({
     children: React.ReactNode;
 }) {
     const { authStatus, user } = useAuthContext();
-    const isAuth = authStatus === "authenticated";
+    const triggerFetchSeller = authStatus === "authenticated";
 
     const {
         data,
         loading: queryLoading,
         error: queryError,
         refetch,
-    } = useQuery<{ sellerProfile: SellerProfile | null }>(GET_SELLER_PROFILE, {
-        skip: !isAuth, // user is not authenticated? No fetch sellerProfile
-        fetchPolicy: "network-only", // fetch from network when component mounts (login or refresh)
-        nextFetchPolicy: "cache-first", // then I use cache for next requests
+    } = useQuery<{ sellerProfile: SellerProfile }>(GET_SELLER_PROFILE, {
+        skip: !triggerFetchSeller, // start request only if auth: triggerFetchSeller is true
+        fetchPolicy: "cache-first",
     });
 
-    const sellerProfile = useMemo(() => {
-        if (!isAuth) return null;
-        if (!data?.sellerProfile) return null;
-        if (data.sellerProfile.user.email !== user?.email) return null;
-        return data.sellerProfile;
-    }, [isAuth, data, user?.email]);
+    const loading =
+        authStatus === "loading" ? true : triggerFetchSeller && queryLoading;
 
-    const loading = authStatus === "loading" ? true : isAuth && queryLoading;
-
-    const error = isAuth // raise error only if sellerProfile was supposed to be fetched
-        ? (queryError as Error | null) ?? null
+    const error = triggerFetchSeller // raise error only if sellerProfile was supposed to be fetched
+        ? ((queryError as Error | null) ?? null)
         : null;
 
     const contextValue = useMemo(
         () => ({
-            sellerProfile,
+            sellerProfile: data?.sellerProfile ?? null,
             loading,
             error,
             refetch,
         }),
-        [sellerProfile, loading, error, refetch]
+        [data, loading, error, refetch],
     );
 
     if (data?.sellerProfile?.user.email !== user?.email) {

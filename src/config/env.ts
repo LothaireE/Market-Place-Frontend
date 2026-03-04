@@ -23,3 +23,5 @@ export const API_URLS = {
 };
 
 export const JWT_SECRET: string = import.meta.env.VITE_JWT_SECRET;
+
+export const CLIENT_URL: string = import.meta.env.VITE_CLIENT_URL;

@@ -25,21 +25,30 @@ export default function CartContextProvider({
         if (storedCart) setCartItems(JSON.parse(storedCart));
     }, [cartItems]);
 
+    // TODO implement multiple product options on orders
     async function addItem(product: CartProduct, quantity: number = 1) {
         setCartItems((prevItems) => {
             let cart: CartItem[] = [];
+
+            const fixedQuantity = quantity === 1 ? quantity : 1; // force quantity to 1 as long as no multiple product options available on orders
+
             const existingItem = prevItems.find(
-                (item) => item.product.id === product.id
+                (item) => item.product.id === product.id,
             );
-            if (existingItem) {
-                cart = prevItems.map((item) =>
-                    item.product.id === product.id
-                        ? { ...item, quantity: item.quantity + quantity }
-                        : item
-                );
-            } else {
-                cart = [...prevItems, { product, quantity }];
-            }
+
+            if (existingItem) return prevItems;
+
+            cart = [...prevItems, { product, quantity: fixedQuantity }];
+
+            // if (existingItem) {
+            //     cart = prevItems.map((item) =>
+            //         item.product.id === product.id
+            //             ? { ...item, quantity: item.quantity + quantity }
+            //             : item
+            //     );
+            // } else {
+            //     cart = [...prevItems, { product, quantity }];
+            // }
             localStorage.setItem(CART, JSON.stringify(cart));
             return cart;
         });
@@ -51,7 +60,21 @@ export default function CartContextProvider({
                 .map((item) =>
                     item.product.id === productId
                         ? { ...item, quantity: item.quantity - 1 }
-                        : item
+                        : item,
+                )
+                .filter((item) => item.quantity > 0);
+            localStorage.setItem(CART, JSON.stringify(cart));
+            return cart;
+        });
+    }
+
+    async function removeMultipleItems(productIds: string[]) {
+        setCartItems((prevItems) => {
+            const cart = prevItems
+                .map((item) =>
+                    productIds.includes(item.product.id)
+                        ? { ...item, quantity: item.quantity - 1 }
+                        : item,
                 )
                 .filter((item) => item.quantity > 0);
             localStorage.setItem(CART, JSON.stringify(cart));
@@ -66,12 +89,13 @@ export default function CartContextProvider({
 
     const totalQuantity = cartItems.reduce(
         (sum, item) => sum + item.quantity,
-        0
+        0,
     );
 
     const contextValue = {
         addItem,
         removeItem,
+        removeMultipleItems,
         clearCart,
         cartItems,
         totalQuantity,

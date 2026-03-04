@@ -51,7 +51,7 @@ type UpdateProductFormProps = {
         name: string;
         condition: ProductCondition;
         description: string;
-        price: number;
+        unitPrice: number;
         sellerProfile: {
             user: {
                 username: string;
@@ -80,7 +80,7 @@ const UpdateProductForm = ({
     const { fetchWithAuth } = useApi();
 
     const [productName, setProductName] = useState(product.name);
-    const [price, setPrice] = useState<number>(product.price ?? 0);
+    const [price, setPrice] = useState<number>(product.unitPrice ?? 0);
     const [condition, setCondition] = useState<ProductCondition>(
         product.condition as ProductCondition
     );
@@ -106,7 +106,7 @@ const UpdateProductForm = ({
     useEffect(() => {
         // refetch if product changes
         setProductName(product.name);
-        setPrice(product.price);
+        setPrice(product.unitPrice);
         setCondition(product.condition as ProductCondition);
         setDescription(product.description ?? "");
         setExistingImages(product.images ?? []);
@@ -241,7 +241,7 @@ const UpdateProductForm = ({
             );
 
             formData.append("name", productName);
-            formData.append("price", String(price));
+            formData.append("unitPrice", String(price));
             formData.append("condition", condition);
             formData.append("description", description);
             if (size) formData.append("size", size);

@@ -48,7 +48,7 @@ const SellerRoute = ({ children }: { children: React.ReactNode }) => {
         return (
             <>
                 {toast}
-                <Navigate to="/seller/onboarding" replace />;
+                <Navigate to="/onboarding" replace />;
             </>
         );
     // )
