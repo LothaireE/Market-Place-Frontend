@@ -40,7 +40,7 @@ const HomePage = () => {
         GET_PRODUCTS,
         {
             variables: { pagination },
-        }
+        },
     );
 
     const goToDetails = (id: string) => {

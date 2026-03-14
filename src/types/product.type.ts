@@ -21,6 +21,7 @@ export type Product = {
     id: string;
     sellerId: string;
     color?: string;
+    status?: string;
     condition: ProductCondition;
     createdAt: string;
     description?: string;

@@ -36,7 +36,7 @@ type Product = {
     id: string;
     name: string;
     unitPrice: number;
-    status: string;
+    status?: string;
     condition: ProductCondition;
     categories?: [Category];
     images: ProductImage[];

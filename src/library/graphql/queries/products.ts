@@ -20,6 +20,7 @@ export const GET_PRODUCTS = gql`
                     format
                     name
                 }
+                status
             }
             totalPages
             totalProducts

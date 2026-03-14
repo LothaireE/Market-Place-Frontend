@@ -7,7 +7,7 @@ import { graphqlClient } from "./library/graphql/client.ts";
 
 import App from "./App.tsx";
 import HomePage from "./pages/home/HomePage.tsx";
-import About from "./pages/About";
+import About from "./pages/about/About.tsx";
 import NotFound from "./pages/NotFound";
 import Authenticate from "./pages/auth/Authenticate.tsx";
 import ProtectedRoute from "./components/layout/ProtectedRoute.tsx";
