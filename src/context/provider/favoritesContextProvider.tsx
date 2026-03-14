@@ -26,9 +26,9 @@ export default function FavoriteContextProvider({
         skip: !isAuthenticated,
     });
 
-    const favorites = isAuthenticated ? data?.favorites ?? [] : [];
+    const favorites = isAuthenticated ? (data?.favorites ?? []) : [];
     const loading = isAuthenticated && queryLoading;
-    const error = isAuthenticated ? queryError ?? null : null;
+    const error = isAuthenticated ? (queryError ?? null) : null;
 
     const [addFavorite] = useMutation(ADD_TO_FAVORITES);
     const [removeFavorite] = useMutation(REMOVE_FROM_FAVORITES);

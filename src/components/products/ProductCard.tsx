@@ -14,6 +14,7 @@ import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import {
     useAuthContext,
+    // useCartContext,
     useFavoritesContext,
 } from "../../context/useAppContext";
 import type {
@@ -34,7 +35,8 @@ type ProductCardProps = {
 type Product = {
     id: string;
     name: string;
-    price: number;
+    unitPrice: number;
+    status: string;
     condition: ProductCondition;
     categories?: [Category];
     images: ProductImage[];
@@ -50,7 +52,10 @@ const ProductCard = ({
 }: ProductCardProps) => {
     const { isAuthenticated } = useAuthContext();
     const { toggleFavorite, isFavorite } = useFavoritesContext();
+    // const { addItem, removeItem, cartItems, isInCart } = useCartContext();
     const isFav = isFavorite(product.id);
+    // console.log("isFav", isFav);
+    // const alreadyInCart = isInCart(product.id);
 
     const [openToast, setOpenToast] = useState<boolean>(false);
     const [toastMessage, setToastMessage] = useState<string>("");
@@ -66,7 +71,7 @@ const ProductCard = ({
     };
 
     const handleToggleFavorite = (
-        event: React.MouseEvent<HTMLButtonElement, MouseEvent>
+        event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
     ) => {
         event.stopPropagation();
         if (!isAuthenticated) {
@@ -78,6 +83,30 @@ const ProductCard = ({
             return toggleFavorite(product.id);
         }
     };
+    // const handleAddToCart = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    //     event.stopPropagation();
+    //     if (!product) return;
+    //     await addItem(product, 1);
+    // };
+
+    // const handleToggleCartItem = async (
+    //     event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    //     product: Product,
+    // ) => {
+    //     event.stopPropagation();
+    //     if (!isAuthenticated) {
+    //         return (
+    //             setOpenToast(true),
+    //             setToastMessage(COMMON_MESSAGES.REQUIRE_AUTH)
+    //         );
+    //     }
+    //     const isInCart = cartItems.some((it) => it.product.id === product.id);
+    //     if (isInCart) {
+    //         removeItem(product.id);
+    //     } else {
+    //         addItem(product, 1);
+    //     }
+    // };
 
     // const handleSeeMore = (
     //     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -208,7 +237,7 @@ const ProductCard = ({
                     <Chip
                         size="small"
                         // icon={<EuroIcon />}
-                        label={`${product.price} €`}
+                        label={`${product.unitPrice} €`}
                         color="primary"
                         variant="outlined"
                     />
@@ -221,6 +250,12 @@ const ProductCard = ({
                         />
                     )}
                 </Stack>
+                <Chip
+                    size="small"
+                    label={`${product.status}`}
+                    color="primary"
+                    variant="outlined"
+                />
             </Box>
 
             {/* Footer : bouton See more + catégorie */}
@@ -257,6 +292,15 @@ const ProductCard = ({
                     See more
                 </Button>
             )}
+            {/* <Box>
+                <Button
+                    onClick={(event) => handleToggleCartItem(event, product)}
+                    variant="outlined"
+                    sx={{ borderRadius: 10 }}
+                >
+                    {alreadyInCart ? "Remove from cart" : "Add to cart"}
+                </Button>
+            </Box> */}
         </Paper>
     );
 };

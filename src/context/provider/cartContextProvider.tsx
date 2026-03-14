@@ -92,11 +92,15 @@ export default function CartContextProvider({
         0,
     );
 
+    const isInCart = (productId: string) =>
+        cartItems.some((it) => it.product.id === productId);
+
     const contextValue = {
         addItem,
         removeItem,
         removeMultipleItems,
         clearCart,
+        isInCart,
         cartItems,
         totalQuantity,
     };

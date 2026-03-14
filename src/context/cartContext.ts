@@ -6,6 +6,7 @@ export type CartContextType = {
     removeItem: (productId: string) => Promise<void>;
     removeMultipleItems: (productIds: string[]) => Promise<void>;
     clearCart: () => Promise<void>;
+    isInCart: (productId: string) => boolean;
     cartItems: CartItem[];
     totalQuantity: number;
 };
@@ -15,6 +16,7 @@ const CartContext = createContext<CartContextType>({
     removeItem: async () => {},
     removeMultipleItems: async () => {},
     clearCart: async () => {},
+    isInCart: () => false,
     cartItems: [],
     totalQuantity: 0,
 });

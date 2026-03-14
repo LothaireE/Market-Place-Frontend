@@ -6,7 +6,7 @@ export const ADD_TO_FAVORITES = gql`
             product {
                 id
                 name
-                price
+                unitPrice
                 condition
                 images {
                     name
@@ -32,7 +32,7 @@ export const REMOVE_FROM_FAVORITES = gql`
             product {
                 id
                 name
-                price
+                unitPrice
                 condition
                 images {
                     name
@@ -58,7 +58,7 @@ export const CLEAR_FAVORITE = gql`
             product {
                 id
                 name
-                price
+                unitPrice
                 condition
                 images {
                     name
@@ -81,7 +81,7 @@ export const CLEAR_FAVORITE = gql`
 //             product {
 //                 id
 //                 name
-//                 price
+//                 unitPrice
 //                 condition
 //                 images {
 //                     name

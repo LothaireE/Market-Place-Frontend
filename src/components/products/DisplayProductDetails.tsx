@@ -68,6 +68,24 @@ const DisplayProductDetails = (product: ProductDetail) => {
         await cart.addItem(product, 1);
     };
 
+    const removeItem = async () => {
+        if (!product) return;
+        await cart.removeItem(product.id);
+    };
+
+    const isInCart = cart.isInCart(product.id);
+
+    const handleToggleCartItem = async () => {
+        if (!product) return;
+        if (isInCart) {
+            await removeItem();
+        } else {
+            await handleAddToCart();
+        }
+    };
+
+    const toggleCartLabel = isInCart ? "Remove from cart" : "Add to cart";
+
     const conditionLabel = product?.condition
         ? product.condition.toLowerCase().replace("_", " ")
         : "";
@@ -238,10 +256,11 @@ const DisplayProductDetails = (product: ProductDetail) => {
                             <Button
                                 variant="contained"
                                 fullWidth
-                                onClick={handleAddToCart}
+                                // onClick={handleAddToCart}
+                                onClick={handleToggleCartItem}
                                 startIcon={<ShoppingBasketIcon />}
                             >
-                                Add to cart
+                                {toggleCartLabel}
                             </Button>
                             <Button
                                 variant="outlined"

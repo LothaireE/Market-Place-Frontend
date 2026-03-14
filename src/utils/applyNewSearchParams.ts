@@ -10,13 +10,13 @@ export type FilterUpdate = {
 
 export const applyNewSearchParams = (
     prev: URLSearchParams,
-    newFilters: FilterUpdate
+    newFilters: FilterUpdate,
 ) => {
     const updatedParams = new URLSearchParams(String(prev));
 
     const setOrDeleteParam = (
         key: string,
-        value: string | null | undefined
+        value: string | null | undefined,
     ) => {
         if (value === undefined) return;
         if (value === null || value === "") updatedParams.delete(key);
@@ -31,7 +31,8 @@ export const applyNewSearchParams = (
     setOrDeleteParam("condition", newFilters.condition ?? undefined);
 
     if (newFilters.page !== undefined) {
-        if (newFilters.page === null || newFilters.page === "1") {
+        // if (newFilters.page === null || newFilters.page === "1") {
+        if (newFilters.page === null) {
             updatedParams.delete("page");
         } else {
             updatedParams.set("page", String(newFilters.page));

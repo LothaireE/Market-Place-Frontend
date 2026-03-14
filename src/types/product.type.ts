@@ -59,3 +59,54 @@ export type NewImage = {
     file: File;
     previewUrl: string;
 };
+
+///////// FOR PRODUCTS LIST PAGE /////////
+
+export type PaginationInput = {
+    page?: number;
+    pageSize?: number; // null,
+    sortBy?: "DATE" | "PRICE";
+    sortDirection?: "ASC" | "DESC";
+};
+
+export type ProductFilterInput = {
+    ids?: string[] | null;
+    search?: string;
+    category?: string;
+    condition?: [ProductCondition] | null;
+    minPrice?: number | null;
+    maxPrice?: number | null;
+};
+
+export type ProductListItem = {
+    id: string;
+    name: string;
+    unitPrice: number;
+    condition: ProductCondition;
+    categories?: [Category];
+    images: ProductImage[];
+    status: string;
+    sellerProfile: {
+        user: { username: string };
+    };
+};
+
+export type ProductListResponse = {
+    products: {
+        items: ProductListItem[];
+        totalItems: number;
+        totalPages: number;
+    };
+};
+
+export type SelectedCategory = {
+    id: string;
+    name: string;
+};
+
+export type LoadProductByNameType = {
+    products: { items: ProductListItem[] };
+    totalPages: number;
+    totalProducts: number;
+    currentPage: number;
+};

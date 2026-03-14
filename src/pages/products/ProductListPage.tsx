@@ -26,8 +26,14 @@ import { useLazyQuery, useQuery } from "@apollo/client";
 import { useNavigate, useSearchParams } from "react-router";
 import type {
     Category,
+    LoadProductByNameType,
+    PaginationInput,
     ProductCondition,
-    ProductImage,
+    ProductFilterInput,
+    ProductListItem,
+    // ProductImage,
+    ProductListResponse,
+    SelectedCategory,
 } from "../../types/product.type";
 import DashboardCategories from "../../components/products/dashboard/DashboardCategories";
 import DashboardSearchBar from "../../components/products/dashboard/DashboardSearchBar";
@@ -45,76 +51,11 @@ import {
 } from "../../utils/applyNewSearchParams";
 import { useDebouncedRange } from "../../hooks/useDebouncedRange";
 import useOnBoardNavigate from "../../hooks/onBoardNavigate";
-
-const pagination = {
-    page: null,
-    pageSize: 12, // null,
-    sortBy: "DATE",
-    sortDirection: "DESC",
-};
-
-export type PaginationInput = {
-    page?: string;
-    pageSize?: number; // null,
-    sortBy?: "DATE" | "PRICE";
-    sortDirection?: "ASC" | "DESC";
-};
-
-export type ProductFilterInput = {
-    ids?: string[] | null;
-    search?: string;
-    category?: string;
-    condition?: [ProductCondition] | null;
-    minPrice?: number | null;
-    maxPrice?: number | null;
-};
-
-type Product = {
-    id: string;
-    name: string;
-    unitPrice: number;
-    condition: ProductCondition;
-    categories?: [Category];
-    images: ProductImage[];
-    status: string;
-    sellerProfile: {
-        user: { username: string };
-    };
-};
-
-type ProductsResponse = {
-    products: {
-        items: Product[];
-        totalItems: number;
-        totalPages: number;
-    };
-};
-
-const CONDITION_FILTERS: { label: string; value: ProductCondition }[] = [
-    { label: "Excellent", value: "EXCELLENT" },
-    { label: "Good", value: "GOOD" },
-    { label: "Correct", value: "CORRECT" },
-    { label: "Used", value: "USED" },
-    { label: "Damaged", value: "DAMAGED" },
-];
-
-const SORT_OPTIONS = [
-    { label: "Newest first", value: "NEWEST" },
-    { label: "Price: low → high", value: "PRICE_ASC" },
-    { label: "Price: high → low", value: "PRICE_DESC" },
-];
-
-type SelectedCategory = {
-    id: string;
-    name: string;
-};
-
-type LoadProductByNameType = {
-    products: { items: Product[] };
-    totalPages: number;
-    totalProducts: number;
-    currentPage: number;
-};
+import {
+    CONDITION_FILTERS,
+    DEFAULT_PAGE_SIZE,
+    SORT_OPTIONS,
+} from "../../constants/products";
 
 const ProductList = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -123,7 +64,9 @@ const ProductList = () => {
     const minPriceParams = searchParams.get("minPrice") ?? null;
     const maxPriceParams = searchParams.get("maxPrice") ?? null;
     const conditionParams = searchParams.get("condition") ?? null;
-    // const sortParams = searchParams.get("sort") ?? null;
+    const pageParam = Number(searchParams.get("page") ?? "1");
+    const safePage =
+        Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
     const navigate = useNavigate();
 
@@ -133,15 +76,11 @@ const ProductList = () => {
         onBoardNavigate("/seller/new");
     };
 
-    // const setFilterParams = (filter: FilterUpdate) => {
-    //     setSearchParams((prev) => applyNewSearchParams(prev, filter));
-    // };
-
     const setFilterParams = useCallback(
         (filter: FilterUpdate) => {
             setSearchParams((prev) => applyNewSearchParams(prev, filter));
         },
-        [setSearchParams]
+        [setSearchParams],
     );
 
     const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -161,11 +100,9 @@ const ProductList = () => {
         maxPriceParams ? Number(maxPriceParams) : 5000,
     ]);
     const [searchInputValue, setSearchInputValue] = useState("");
-    const [searchResult, setSearchResult] = useState<Product[]>([]);
+    const [searchResult, setSearchResult] = useState<ProductListItem[]>([]);
     const [sort, setSort] = useState<string>("NEWEST");
-    const [page, setPage] = useState(1);
-    // const limit = 12;
-    //  const filter = { search: "" };
+    const [page, setPage] = useState(safePage);
 
     const conditionArray = conditionParams
         ? (conditionParams.split(",") as ProductCondition[])
@@ -180,15 +117,48 @@ const ProductList = () => {
             conditionArray && conditionArray.length > 0 ? conditionArray : null,
     } as ProductFilterInput;
 
-    const { data, loading, error } = useQuery<ProductsResponse>(
+    // Keep local page state in sync with the URL (?page=)
+    useEffect(() => {
+        setPage(safePage);
+    }, [safePage]);
+    console.log("Current page:", page);
+    console.log("safePage", safePage);
+
+    // Build pagination input dynamically from UI state
+    const paginationInput: PaginationInput = (() => {
+        if (sort === "PRICE_ASC") {
+            return {
+                page: page, // String(page),
+                pageSize: DEFAULT_PAGE_SIZE,
+                sortBy: "PRICE",
+                sortDirection: "ASC",
+            };
+        }
+        if (sort === "PRICE_DESC") {
+            return {
+                page: page, //String(page),
+                pageSize: DEFAULT_PAGE_SIZE,
+                sortBy: "PRICE",
+                sortDirection: "DESC",
+            };
+        }
+        // NEWEST
+        return {
+            page: page, //String(page),
+            pageSize: DEFAULT_PAGE_SIZE,
+            sortBy: "DATE",
+            sortDirection: "DESC",
+        };
+    })();
+
+    const { data, loading, error } = useQuery<ProductListResponse>(
         GET_PRODUCTS_LIST_PAGE,
         {
             variables: {
-                // filter: filter
                 filter: paramsfilter,
-                pagination: pagination,
+                pagination: paginationInput,
             },
-        }
+        },
     );
 
     const [loadProductByName, { data: searchData }] =
@@ -202,12 +172,13 @@ const ProductList = () => {
 
     const products = data?.products.items ?? [];
     const totalPages = data?.products.totalPages ?? 1;
+
     const handleToggleCondition = (cond: ProductCondition) => {
         setPage(1);
         setSelectedConditions((prev) =>
             prev.includes(cond)
                 ? prev.filter((c) => c !== cond)
-                : [...prev, cond]
+                : [...prev, cond],
         );
         setFilterParams({
             condition: selectedConditions.includes(cond)
@@ -218,7 +189,6 @@ const ProductList = () => {
     };
 
     const handlePriceChange = (_: Event, value: number | number[]) => {
-        // i will probably have to insert some sort of debounce here
         if (!Array.isArray(value)) return;
         setPriceRange([value[0], value[1]]);
         setPage(1);
@@ -237,18 +207,20 @@ const ProductList = () => {
     const handleSortChange = (e: SelectChangeEvent<string>) => {
         setSort(e.target.value as string);
         setPage(1);
+        setFilterParams({ page: "1" });
     };
+
     const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
-        setPage(value);
+        setFilterParams({ page: String(value) });
+        // setPage(value);
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     const handleSearchSubmit = (event: React.FormEvent) => {
-        // TODO handle search submit that renders the results of said search in grid
         event.preventDefault();
         setSearchInputValue("");
         setSearchResult([]);
-        setFilterParams({ search: searchInputValue });
+        setFilterParams({ search: searchInputValue, page: "1" });
         setPage(1);
     };
 
@@ -259,21 +231,35 @@ const ProductList = () => {
     useDebouncedSearch(searchInputValue, 500, async (search: string) => {
         await loadProductByName({
             variables: {
-                pagination,
+                pagination: {
+                    page: "1",
+                    pageSize: DEFAULT_PAGE_SIZE,
+                    sortBy: "DATE",
+                    sortDirection: "DESC",
+                },
                 filter: { search },
             },
         });
     });
 
+    const lastAppliedRangeRef = useRef<[number, number] | null>(null);
+
     const onRangeChangeDebounced = useCallback(
         (range: [number, number]) => {
+            const last = lastAppliedRangeRef.current; // this ref is to store the last applied range without causing re-renders
+            const changed =
+                !last || last[0] !== range[0] || last[1] !== range[1];
+            if (!changed) return;
+
+            lastAppliedRangeRef.current = range;
+            // Only update filters if the range has actually changed
             setFilterParams({
                 minPrice: range[0],
                 maxPrice: range[1],
                 page: "1",
             });
         },
-        [setFilterParams]
+        [setFilterParams],
     );
 
     useDebouncedRange(priceRange, 500, onRangeChangeDebounced);
@@ -288,7 +274,8 @@ const ProductList = () => {
         console.info("You clicked the delete icon.");
         setSearchInputValue("");
         setSearchResult([]);
-        setFilterParams({ search: "" });
+        setFilterParams({ search: "", page: "1" });
+        setPage(1);
     };
 
     return (
@@ -305,6 +292,7 @@ const ProductList = () => {
                     piece of your setup.
                 </Typography>
             </Box>
+
             {searchNameParams && (
                 <Box sx={{ mb: 3, ml: 3 }}>
                     <Stack direction="row" spacing={1} alignItems="center">
@@ -323,9 +311,9 @@ const ProductList = () => {
                     </Stack>
                 </Box>
             )}
+
             <Grid container spacing={3}>
                 {/* dashboard */}
-
                 <Grid size={{ xs: 12, md: 2 }}>
                     <Paper
                         elevation={1}
@@ -381,7 +369,7 @@ const ProductList = () => {
                                     control={
                                         <Checkbox
                                             checked={selectedConditions.includes(
-                                                c.value
+                                                c.value,
                                             )}
                                             onChange={() =>
                                                 handleToggleCondition(c.value)
@@ -427,7 +415,6 @@ const ProductList = () => {
                             size="small"
                             variant="outlined"
                             fullWidth
-                            // onClick={() => navigate("/seller/new")}
                             onClick={handleStartSellingClick}
                         >
                             Start selling
@@ -453,7 +440,6 @@ const ProductList = () => {
                             spacing={2}
                             alignItems={{ xs: "stretch", sm: "center" }}
                             justifyContent="space-between"
-                            // border={3}
                         >
                             <Box
                                 ref={wrapperRef}
@@ -466,12 +452,13 @@ const ProductList = () => {
                                     handleSearchSubmit={handleSearchSubmit}
                                     placeholder="Search by name, brand, model…"
                                 />
-                                <SearchDropDownSelector // TODO rename it search selector
+                                <SearchDropDownSelector
                                     items={searchResult}
                                     handleOnClick={handleSearchSelect}
                                     open={searchbarClick === "inside"}
                                 />
                             </Box>
+
                             <Stack
                                 direction="row"
                                 spacing={1}
