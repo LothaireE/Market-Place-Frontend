@@ -438,7 +438,7 @@ const SellerProductListPage = () => {
                                 >
                                     <Chip
                                         size="small"
-                                        label={`${product.price} €`}
+                                        label={`${product.unitPrice} €`}
                                         icon={<EuroIcon />}
                                         color="primary"
                                         variant="outlined"

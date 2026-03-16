@@ -98,7 +98,7 @@ const SellerDashboardPage = () => {
     };
 
     const username = capitalizeFirstLetter(
-        sellerProfile?.user.username ?? "seller"
+        sellerProfile?.user.username ?? "seller",
     );
 
     if (loading) {
@@ -246,7 +246,7 @@ const SellerDashboardPage = () => {
                                     .slice(0, 5)
                                     .map((product: Product) => {
                                         const viewsCount = Math.floor(
-                                            Math.random() * 100
+                                            Math.random() * 100,
                                         );
                                         return (
                                             <ListItem
@@ -262,7 +262,7 @@ const SellerDashboardPage = () => {
                                                 }}
                                                 onClick={() =>
                                                     navigate(
-                                                        `/products/${product.id}`
+                                                        `/products/${product.id}`,
                                                     )
                                                 }
                                                 secondaryAction={
@@ -285,7 +285,7 @@ const SellerDashboardPage = () => {
                                                     secondary={
                                                         <ListingPriceDetails
                                                             price={
-                                                                product.price
+                                                                product.unitPrice
                                                             }
                                                             status="Pending"
                                                             // status={product.status}

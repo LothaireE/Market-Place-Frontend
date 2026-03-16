@@ -1,13 +1,13 @@
 import { ApolloClient, HttpLink, InMemoryCache } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { loadDevMessages, loadErrorMessages } from "@apollo/client/dev";
-import { API_URLS } from "../../config/env";
+import { API_URLS, MODE } from "../../config/env";
 
 const httpLink = new HttpLink({ uri: API_URLS.marketPlace });
 
 export const AUTH_ACCESS_TOKEN = "mp_user_access_token";
 
-if (process.env.NODE_ENV !== "production") {
+if (MODE !== "PRODUCTION") {
     loadDevMessages();
     loadErrorMessages();
 }
