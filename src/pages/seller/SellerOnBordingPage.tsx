@@ -23,6 +23,9 @@ import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { gql, useMutation } from "@apollo/client";
+import { useAuthContext } from "../../context/useAppContext";
+import { useNavigate } from "react-router";
+import Toast from "../../components/common/Toast";
 
 type VerificationStatus = "PENDING" | "VERIFIED" | "REJECTED";
 
@@ -30,7 +33,6 @@ type SellerProfileInput = {
     bio?: string | null;
     payoutAccount?: string | null;
     shopName?: string | null;
-    userId: string;
     verified: VerificationStatus;
 };
 
@@ -47,11 +49,12 @@ const CREATE_SELLER_PROFILE = gql`
     }
 `;
 
-// ---- Mock: replace with your real auth user id from context ----
-const useMockUserId = () => "user_123"; // e.g. from useAuth().user?.id
-
 export default function SellerOnboardingPage() {
-    const userId = useMockUserId();
+    const { isAuthenticated } = useAuthContext();
+    const navigate = useNavigate();
+
+    const [openToast, setOpenToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState("");
 
     const [shopName, setShopName] = useState("");
     const [bio, setBio] = useState("");
@@ -65,6 +68,8 @@ export default function SellerOnboardingPage() {
         {
             createSellerProfile: {
                 id: string;
+                bio?: string | null;
+                payoutAccount?: string | null;
                 shopName?: string | null;
                 verified: VerificationStatus;
             };
@@ -73,19 +78,19 @@ export default function SellerOnboardingPage() {
     >(CREATE_SELLER_PROFILE);
 
     const canSubmit = useMemo(() => {
-        if (!userId) return false;
+        if (!isAuthenticated) return false;
         if (loading) return false;
         if (!shopName.trim()) return false;
         // payoutAccount is optional per your input, but you might want to require it:
         // if (!payoutAccount.trim()) return false;
         return true;
-    }, [userId, loading, shopName]);
+    }, [isAuthenticated, loading, shopName]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLocalError(null);
 
-        if (!userId) {
+        if (!isAuthenticated) {
             setLocalError("You must be logged in to become a seller.");
             return;
         }
@@ -96,7 +101,6 @@ export default function SellerOnboardingPage() {
 
         try {
             const payload: SellerProfileInput = {
-                userId,
                 shopName: shopName.trim(),
                 bio: bio.trim() ? bio.trim() : null,
                 payoutAccount: payoutAccount.trim()
@@ -105,19 +109,18 @@ export default function SellerOnboardingPage() {
                 verified: verifiedChoice, // usually PENDING
             };
 
-            const res = await createSellerProfile({
+            await createSellerProfile({
                 variables: { newSellerProfile: payload },
             });
 
-            // TODO: redirect to seller dashboard
-            // navigate("/seller");
-            alert(
-                `Seller profile created ✅ (id: ${res.data?.createSellerProfile.id})`
-            );
+            setToastMessage("Seller profile created successfully!");
+            setOpenToast(true);
+            setTimeout(() => {
+                navigate("/seller");
+            }, 1500);
         } catch (e) {
-            // useMutation already sets `error`, this is just a safety net
             setLocalError(
-                e instanceof Error ? e.message : "Something went wrong."
+                e instanceof Error ? e.message : "Something went wrong.",
             );
         }
     };
@@ -125,6 +128,12 @@ export default function SellerOnboardingPage() {
     return (
         <Box sx={{ py: 4 }}>
             <Container maxWidth="lg">
+                <Toast
+                    onOpen={openToast}
+                    onClose={() => setOpenToast(false)}
+                    message={toastMessage}
+                    severity="success"
+                />
                 <Stack spacing={1} sx={{ mb: 3 }}>
                     <Typography variant="h4" fontWeight={800}>
                         Become a seller
@@ -211,7 +220,7 @@ export default function SellerOnboardingPage() {
                                         onChange={(e) =>
                                             setVerifiedChoice(
                                                 e.target
-                                                    .value as VerificationStatus
+                                                    .value as VerificationStatus,
                                             )
                                         }
                                     >
