@@ -1,11 +1,9 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { API_URLS } from "../../config/env";
 import AuthContext, { type ThemeMode } from "../authContext";
-import { ThemeProvider, createTheme } from "@mui/material";
+import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import { appTheme, appThemeDark } from "../../theme/appTheme";
 import { AUTH_ACCESS_TOKEN, graphqlClient } from "../../library/graphql/client";
-
-// import { AUTH_ACCESS_TOKEN, setApolloAuthTokenGetter } from "../library/graphql/client";
 
 type LoginParams = {
     email: string;
@@ -104,10 +102,6 @@ export default function AuthContextProvider({
 
             const { data } = await response.json();
 
-            // setUser(data.user ?? null);
-
-            // setAccessToken(data.accessToken ?? null);
-            // localStorage.setItem(AUTH_ACCESS_TOKEN, data.accessToken);
             const newAccessToken = data.accessToken ?? null;
 
             setUser(data.user ?? null);
@@ -182,7 +176,10 @@ export default function AuthContextProvider({
     };
     return (
         <AuthContext.Provider value={contextValue}>
-            <ThemeProvider theme={theme}>{children}</ThemeProvider>
+            <ThemeProvider theme={theme}>
+                <CssBaseline />
+                {children}
+            </ThemeProvider>
         </AuthContext.Provider>
     );
 }

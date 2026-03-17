@@ -14,7 +14,7 @@ export default function App() {
                 <CartContextProvider>
                     <FavoriteContextProvider>
                         <AppHeader />
-                        <Container sx={{ bgcolor: "background.default" }}>
+                        <Container>
                             <Outlet />
                         </Container>
                     </FavoriteContextProvider>
