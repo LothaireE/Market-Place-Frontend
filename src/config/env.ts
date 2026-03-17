@@ -1,9 +1,3 @@
-// export const VITE_API_URL: string = import.meta.env.VITE_API_URL;
-
-// export const API_URL: string = VITE_API_URL;
-
-// export const AUTH_API_URL: string = import.meta.env.VITE_AUTH_API_URL;
-
 export const AUTH_URL: string = import.meta.env.VITE_AUTH_SERVER_URL;
 export const MAIN_URL: string = import.meta.env.VITE_MAIN_SERVER_URL;
 

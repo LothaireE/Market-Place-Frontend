@@ -22,7 +22,7 @@ const SignUpForm = ({ onSuccess }: SignUpFormProps) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [accept, setAccept] = useState(true);
+    const [accept, setAccept] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [info, setInfo] = useState<string | null>(null);
@@ -77,7 +77,7 @@ const SignUpForm = ({ onSuccess }: SignUpFormProps) => {
         } catch (error) {
             if (error instanceof Error) {
                 setError(
-                    error.message || "An error occurred during registration."
+                    error.message || "An error occurred during registration.",
                 );
             } else {
                 setError("AAn error occurred during registration.");

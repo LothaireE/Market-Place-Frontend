@@ -28,8 +28,8 @@ type SignInFormProps = {
 const SignInForm = ({ onSuccess }: SignInFormProps) => {
     const { login, loading, error: authError } = useAuthContext();
 
-    const [email, setEmail] = useState("john@example.com");
-    const [password, setPassword] = useState("tadaronne");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [remember, setRemember] = useState(true);
     const [info, setInfo] = useState<string | null>(null);
     const [localError, setLocalError] = useState<string | null>(null);
