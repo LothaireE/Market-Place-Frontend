@@ -49,6 +49,7 @@ const CREATE_SELLER_PROFILE = gql`
     }
 `;
 
+//TODO make this form an  external component
 export default function SellerOnboardingPage() {
     const { isAuthenticated } = useAuthContext();
     const navigate = useNavigate();
@@ -81,7 +82,7 @@ export default function SellerOnboardingPage() {
         if (!isAuthenticated) return false;
         if (loading) return false;
         if (!shopName.trim()) return false;
-        // payoutAccount is optional per your input, but you might want to require it:
+        // payoutAccount is optional for now, but I might want to require it
         // if (!payoutAccount.trim()) return false;
         return true;
     }, [isAuthenticated, loading, shopName]);

@@ -8,14 +8,13 @@ import {
     Chip,
     TextField,
     InputAdornment,
-    Avatar,
     Radio,
     FormControl,
     FormLabel,
     RadioGroup,
     FormControlLabel,
-    // Divider,
 } from "@mui/material";
+import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -389,7 +388,9 @@ const SellerProductListPage = () => {
             )}
 
             <Grid container spacing={3}>
-                {data?.sellerProducts?.map((product: Product) => (
+                {data?.sellerProducts?.map((product: Product) => {
+                    const thumbnail = product.images?.[0]?.url
+                    return (
                     <Grid key={product.id} size={{ xs: 12, md: 6 }}>
                         <Paper
                             elevation={1}
@@ -404,17 +405,41 @@ const SellerProductListPage = () => {
                                 },
                             }}
                         >
-                            <Avatar
+                            {/* <Avatar
                                 variant="rounded"
                                 src={product.images?.[0]?.url}
+                                
                                 sx={{
                                     width: 100,
                                     height: 100,
                                     borderRadius: 2,
                                     flexShrink: 0,
                                     flex: 2,
+                                    objectFit:"contain"
                                 }}
-                            />
+                            /> */}
+                             {thumbnail? <Box
+                                component="img"
+                                src={thumbnail}
+                                alt={product.name}
+                                sx={{
+                                    width: 100,
+                                    height: 100,
+                                    objectFit: "contain",
+                                }}
+                            />:
+                            <Box
+                                sx={{
+                                    width: 100,
+                                    height: 100,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "text.secondary",
+                                }}
+                            >
+                                <MusicNoteIcon sx={{ fontSize: 48 }} />
+                            </Box>}
 
                             <Box
                                 sx={{
@@ -510,7 +535,7 @@ const SellerProductListPage = () => {
                             </Stack>
                         </Paper>
                     </Grid>
-                ))}
+                )})}
                 <Modal
                     open={open}
                     onClose={() => setOpen(false)}
@@ -548,18 +573,13 @@ const SellerProductListPage = () => {
                                 onClick={() =>
                                     handleDelete(deleteModal.productId)
                                 }
-                                // sx={{ backgroundColor: "error.main" }}
                                 sx={{
-                                    // border: "1px solid red",
                                     bgcolor: "common.main",
                                     "&:hover": { bgcolor: "error.main" },
                                 }}
                             >
                                 Delete
                             </Button>
-                            {/* <Button onClick={() => {setOpen(false), setDeleteModal({productId: null, productName: null}})}>
-                                Cancel
-                            </Button> */}
                             <Button
                                 onClick={() => {
                                     setOpen(false);
@@ -570,13 +590,6 @@ const SellerProductListPage = () => {
                                 }}
                             >
                                 Cancel
-                            </Button>
-                            <Button
-                                onClick={() =>
-                                    console.log(deleteModal.productName)
-                                }
-                            >
-                                log
                             </Button>
                         </Box>
                     </Box>

@@ -284,7 +284,7 @@ const ProductList = () => {
             <Box sx={{ mb: 3 }}>
                 <Stack direction="row" spacing={1} alignItems="center">
                     <Typography variant="h4" fontWeight={600}>
-                        Browse instruments
+                        Browse gear & instruments
                     </Typography>
                 </Stack>
                 <Typography variant="body2" color="text.secondary">

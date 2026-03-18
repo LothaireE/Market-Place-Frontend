@@ -78,10 +78,16 @@ const ProductImageGallery = ({ images }: ProductImageGalleryProps) => {
         >
             {images.map((item) => (
                 <ImageListItem key={item.publicId}>
-                    <img
-                        srcSet={`${item.url}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
+                    <Box
+                        component="img"
                         src={`${item.url}?w=164&h=164&fit=crop&auto=format`}
+                        srcSet={`${item.url}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
                         alt={item.name}
+                        sx={{
+                            maxWidth: "100%",
+                            maxHeight: "100%",
+                            objectFit: "cover",
+                        }}
                         loading="lazy"
                     />
                 </ImageListItem>
@@ -162,7 +168,6 @@ const SellerProductDetailPage = () => {
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
             <Paper sx={{ p: { xs: 2, md: 4 }, borderRadius: 3 }}>
-                {/* Header  */}
                 <Box
                     sx={{
                         mb: 3,
@@ -203,13 +208,10 @@ const SellerProductDetailPage = () => {
 
                 <Grid container spacing={4}>
                     <Grid>
-                        {/* <Grid item xs={12} md={6}> */}
                         <ProductImageGallery images={product.images || []} />
                     </Grid>
 
                     <Grid>
-                        {/* <Grid item xs={12} md={6}> */}
-
                         <Box sx={{ mb: 3 }}>
                             <Typography variant="h6" gutterBottom>
                                 Instrument details

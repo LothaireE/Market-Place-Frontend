@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Box,
     Button,
@@ -14,11 +14,6 @@ import {
     Paper,
     Chip,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import IconButton from "@mui/material/IconButton";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ClearIcon from "@mui/icons-material/Clear";
 import { capitalizeFirstLetter } from "../../utils/textFormat";
 import { API_URLS } from "../../config/env";
 import { useApi } from "../../hooks/useApi";
@@ -29,44 +24,42 @@ import type {
     ProductCondition,
 } from "../../types/product.type";
 import PriceInput from "../common/PriceInput";
-import ColorSelector from "../common/ColorSelector";
-import { CONDITIONS } from "../../constants/products";
+import ColorSelector from "./shared/ColorSelector";
+import {
+    CONDITIONS,
+    ALLOWED_IMAGE_TYPES,
+    MAX_FILE_SIZE_BYTES,
+    MAX_FILE_SIZE_MB,
+    MAX_FILES,
+} from "../../constants/products";
+import ClearIcon from "@mui/icons-material/Clear";
+import ProductFormPreview from "./shared/ProductFormPreview";
+import CategorySelectorField from "./shared/CategorySelectorField";
+import NewImagesField from "./shared/NewImagesField";
+import FormStatusMessage from "./shared/FormStatusMessage";
 
-const VisuallyHiddenInput = styled("input")({
-    clip: "rect(0 0 0 0)",
-    clipPath: "inset(50%)",
-    height: 1,
-    overflow: "hidden",
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    whiteSpace: "nowrap",
-    width: 1,
-});
 
 type CreateProductFormProps = {
-    onSuccess?: (product: Product) => void;
+    onSuccess?: (product: Product | null) => void;
     registeredCategories?: { id: string; name: string }[];
 };
 
 const CreateProductForm = ({
     onSuccess,
-    registeredCategories,
+    registeredCategories = [],
 }: CreateProductFormProps) => {
     const { fetchWithAuth } = useApi();
 
-    const [productName, setProductName] = useState("Fender Stratocaster");
+    const [productName, setProductName] = useState("");
     const [price, setPrice] = useState<number>(0);
-    const [condition, setCondition] = useState<ProductCondition>("EXCELLENT");
-    const [description, setDescription] = useState(
-        "Great sounding guitar, recently set up. Includes gig bag."
-    );
-    const [size, setSize] = useState<string | null>(null);
+    const [condition, setCondition] = useState<ProductCondition | "">("");
+    const [description, setDescription] = useState("");
+    const [size, setSize] = useState("");
     const [color, setColor] = useState<string | null>(null);
     const [accept, setAccept] = useState(false);
     const [newImages, setNewImages] = useState<NewImage[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<Category[]>(
-        []
+        [],
     );
     const [categorySelectValue, setCategorySelectValue] = useState("");
 
@@ -76,55 +69,78 @@ const CreateProductForm = ({
     const [info, setInfo] = useState<string | null>(null);
 
     useEffect(() => {
-        // Clean preview URLs on unmount
         return () => {
             newImages.forEach((img) => URL.revokeObjectURL(img.previewUrl));
         };
     }, [newImages]);
 
-    const requiredFieldErrors = {
-        name: productName.trim().length === 0 ? "Required" : "",
-        images:
-            newImages.length === 0
-                ? "Provide at least one picture of your article"
-                : "",
-        price: price <= 0 ? "You must set a price" : "",
-        condition: !condition ? "Required" : "",
-        accept: !accept ? "You must accept our terms and conditions" : "",
-    };
+    const requiredFieldErrors = useMemo(
+        () => ({
+            name: productName.trim().length === 0 ? "Required" : "",
+            images:
+                newImages.length === 0
+                    ? "Provide at least one picture of your article."
+                    : "",
+            price: price <= 0 ? "You must set a price." : "",
+            condition:
+                condition === "" ||
+                !CONDITIONS.includes(condition as ProductCondition)
+                    ? "Required"
+                    : "",
+            categories: selectedCategories.length === 0 ? "Required" : "",
+            accept: !accept ? "You must accept our terms and conditions." : "",
+        }),
+        [
+            productName,
+            newImages.length,
+            price,
+            condition,
+            selectedCategories.length,
+            accept,
+        ],
+    );
 
     const isValid =
         !requiredFieldErrors.name &&
         !requiredFieldErrors.images &&
         !requiredFieldErrors.price &&
         !requiredFieldErrors.condition &&
+        !requiredFieldErrors.categories &&
         !requiredFieldErrors.accept;
 
     const handleChangeCondition = (
-        event: React.ChangeEvent<HTMLSelectElement>
+        event: React.ChangeEvent<HTMLSelectElement>,
     ) => {
-        const value = event.target.value as ProductCondition;
-        setCondition(value);
+        setCondition(event.target.value as ProductCondition);
     };
 
     const handleCategorySelect = (
-        event: React.ChangeEvent<HTMLSelectElement>
+        event: React.ChangeEvent<HTMLSelectElement>,
     ) => {
         const value = event.target.value;
 
         if (!value) return;
 
-        if (value === "clear" && selectedCategories.length)
+        if (value === "clear") {
             setSelectedCategories([]);
+            setCategorySelectValue("");
+            return;
+        }
 
         const alreadySelected = selectedCategories.some(
-            (cat) => cat.id === value
+            (cat) => cat.id === value,
         );
-        if (alreadySelected) return;
 
-        const category = registeredCategories?.find((cat) => cat.id === value);
+        if (alreadySelected) {
+            setCategorySelectValue("");
+            return;
+        }
+
+        const category = registeredCategories.find((cat) => cat.id === value);
+
         if (category) {
             setSelectedCategories((prev) => [...prev, category]);
+            setCategorySelectValue("");
         }
     };
 
@@ -136,28 +152,87 @@ const CreateProductForm = ({
         const files = Array.from(event.target.files ?? []);
         if (!files.length) return;
 
-        const mapped = files.map((file) => ({
+        setError(null);
+
+        const remainingSlots = MAX_FILES - newImages.length;
+
+        if (remainingSlots <= 0) {
+            setError(`You can upload up to ${MAX_FILES} images.`);
+            event.target.value = "";
+            return;
+        }
+
+        const filesToProcess = files.slice(0, remainingSlots);
+        const rejectedMessages: string[] = [];
+
+        const isDuplicate = (file: File) =>
+            newImages.some(
+                (img) =>
+                    img.file.name === file.name &&
+                    img.file.size === file.size &&
+                    img.file.lastModified === file.lastModified,
+            );
+
+        const validFiles = filesToProcess.filter((file) => {
+            if (isDuplicate(file)) {
+                rejectedMessages.push(`${file.name} has already been added.`);
+                return false;
+            }
+
+            if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                rejectedMessages.push(
+                    `${file.name}: unsupported format (JPG, PNG, WEBP only).`,
+                );
+                return false;
+            }
+
+            if (file.size > MAX_FILE_SIZE_BYTES) {
+                rejectedMessages.push(
+                    `${file.name}: file is too large (max ${MAX_FILE_SIZE_MB} MB).`,
+                );
+                return false;
+            }
+
+            return true;
+        });
+
+        if (files.length > remainingSlots) {
+            rejectedMessages.push(
+                `Only ${remainingSlots} more image(s) can be added.`,
+            );
+        }
+
+        const mapped = validFiles.map((file) => ({
             file,
             previewUrl: URL.createObjectURL(file),
         }));
 
-        setNewImages((prev) => [...prev, ...mapped]);
+        if (mapped.length > 0) {
+            setNewImages((prev) => [...prev, ...mapped]);
+        }
 
-        event.target.value = ""; // reset input to select same file again
+        if (rejectedMessages.length > 0) {
+            setError(rejectedMessages.join(" "));
+        }
+
+        event.target.value = "";
     };
 
     const handleRemoveNewImage = (index: number) => {
         setNewImages((prev) => {
             const clone = [...prev];
             const [removed] = clone.splice(index, 1);
-            if (removed) URL.revokeObjectURL(removed.previewUrl);
+
+            if (removed) {
+                URL.revokeObjectURL(removed.previewUrl);
+            }
+
             return clone;
         });
     };
 
     const handleSelectColor = (selectedColor: string) => {
-        if (selectedColor === color) setColor(null);
-        else setColor(selectedColor);
+        setColor((prev) => (prev === selectedColor ? null : selectedColor));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -178,13 +253,14 @@ const CreateProductForm = ({
 
             newImages.forEach((img) => formData.append("files", img.file));
             selectedCategories.forEach((cat) =>
-                formData.append("categoryIds", cat.id)
+                formData.append("categoryIds", cat.id),
             );
             formData.append("name", productName);
             formData.append("unitPrice", String(price));
             formData.append("condition", condition);
             formData.append("description", description);
-            if (size) formData.append("size", size);
+
+            if (size.trim()) formData.append("size", size.trim());
             if (color) formData.append("color", color);
 
             const response = await fetchWithAuth(API_URLS.createProduct, {
@@ -193,21 +269,27 @@ const CreateProductForm = ({
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(
-                    errorData.message || "Failed to create listing."
-                );
+                let errorMessage = "Failed to create listing.";
+
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                } catch {
+                    // consolge.log(errorMessage)
+                }
+
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
 
-            setInfo("Listing created successfully! Redirecting…");
+            const infoMessage = data.product ? "Listing created successfully." : "Something went wrong, please retry later."
+            setInfo(infoMessage);
             onSuccess?.(data.product ?? null);
         } catch (err) {
             if (err instanceof Error) {
-                console.log({ err });
                 setError(
-                    err.message || "An error occurred while creating listing."
+                    err.message || "An error occurred while creating listing.",
                 );
             } else {
                 setError("An error occurred while creating listing.");
@@ -223,6 +305,7 @@ const CreateProductForm = ({
                 <Typography component="h1" variant="h5" sx={{ mb: 1 }}>
                     Want to make a few bucks out of your cellar?
                 </Typography>
+
                 <Typography
                     variant="body2"
                     color="text.secondary"
@@ -232,25 +315,14 @@ const CreateProductForm = ({
                     brand, model, year, condition and included accessories.
                 </Typography>
 
-                {/* small preview */}
-                <Box
-                    sx={{
-                        mb: 3,
-                        p: 2,
-                        borderRadius: 2,
-                        bgcolor: "background.default",
-                        border: (theme) =>
-                            `1px dashed ${theme.palette.divider}`,
-                    }}
-                >
-                    <Typography variant="subtitle2" gutterBottom>
-                        Preview
-                    </Typography>
-                    <Typography variant="body2">
-                        <strong>{productName}</strong> • {size} {color} •{" "}
-                        {condition} • {price} €
-                    </Typography>
-                </Box>
+                <ProductFormPreview
+                    productName={productName}
+                    size={size}
+                    color={color}
+                    condition={condition}
+                    price={price}
+                    title="Preview"
+                />
 
                 <Box
                     component="form"
@@ -260,7 +332,7 @@ const CreateProductForm = ({
                 >
                     <Stack spacing={3}>
                         <TextField
-                            label="Instrument name"
+                            label="Name"
                             variant="standard"
                             value={productName}
                             onChange={(e) => setProductName(e.target.value)}
@@ -279,9 +351,9 @@ const CreateProductForm = ({
                             spacing={2}
                         >
                             <TextField
-                                label="Size"
+                                label="Dimensions"
                                 variant="standard"
-                                value={size ?? ""}
+                                value={size}
                                 onChange={(e) => setSize(e.target.value)}
                                 fullWidth
                                 id="size-input"
@@ -289,9 +361,8 @@ const CreateProductForm = ({
                                 helperText='Example: "100x45x12cm"'
                                 autoComplete="off"
                             />
-
-                            {/* color picker  */}
                         </Stack>
+
                         <Box id="color-pick" display="flex" flex={1}>
                             <ColorSelector
                                 onSelectedColor={handleSelectColor}
@@ -330,69 +401,39 @@ const CreateProductForm = ({
                                 onChange={handleChangeCondition}
                                 sx={{ maxWidth: 240 }}
                             >
+                                <option disabled value=""></option>
                                 {CONDITIONS.map((cond) => (
                                     <option key={cond} value={cond}>
                                         {capitalizeFirstLetter(
-                                            cond.toLowerCase()
+                                            cond.toLowerCase(),
                                         )}
                                     </option>
                                 ))}
                             </NativeSelect>
+                            {submitted && requiredFieldErrors.condition && (
+                                <Typography
+                                    variant="caption"
+                                    color="error"
+                                    sx={{ display: "block", mt: 0.5 }}
+                                >
+                                    {requiredFieldErrors.condition}
+                                </Typography>
+                            )}
                         </Box>
-                        <Box>
-                            <InputLabel
-                                variant="standard"
-                                htmlFor="category-select"
-                                required
-                                sx={{ mb: 1 }}
-                            >
-                                Category
-                            </InputLabel>
-                            <NativeSelect
-                                inputProps={{
-                                    name: "category",
-                                    id: "category-select",
-                                }}
-                                value={categorySelectValue}
-                                onChange={(e) => {
-                                    setCategorySelectValue(e.target.value);
-                                    handleCategorySelect(e);
-                                    // setCategorySelectValue(""); // reset après ajout
-                                }}
-                                sx={{
-                                    maxWidth: 240,
-                                    mr: 2,
-                                    overflow: "hidden",
-                                }}
-                            >
-                                <option value="clear">
-                                    {selectedCategories.length
-                                        ? "Clear"
-                                        : "Select categories"}
-                                </option>
-                                {registeredCategories?.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>
-                                        {capitalizeFirstLetter(
-                                            cat.name.toLowerCase()
-                                        )}
-                                    </option>
-                                ))}
-                            </NativeSelect>
-                            {selectedCategories.map((cat) => (
-                                <Chip
-                                    key={cat.id}
-                                    label={cat.name}
-                                    sx={{
-                                        borderRadius: 999,
-                                        fontWeight: 500,
-                                    }}
-                                    onDelete={() =>
-                                        handleRemoveCategory(cat.id)
-                                    }
-                                    deleteIcon={<ClearIcon />}
-                                />
-                            ))}
-                        </Box>
+
+                        <CategorySelectorField
+                            registeredCategories={registeredCategories ?? []}
+                            selectedCategories={selectedCategories}
+                            categorySelectValue={categorySelectValue}
+                            onCategorySelect={(e) => {
+                                setCategorySelectValue(e.target.value);
+                                handleCategorySelect(e);
+                            }}
+                            onRemoveCategory={handleRemoveCategory}
+                            hasError={submitted && Boolean(requiredFieldErrors.categories)}
+                            errorMessage={requiredFieldErrors.categories}
+                        />
+
                         <TextField
                             id="description-input"
                             label="Description"
@@ -404,19 +445,7 @@ const CreateProductForm = ({
                             helperText="Mention wear and tear, service history, playability, noise issues, and included accessories (case, cables, pedals, etc.)."
                         />
 
-                        {/* <Typography
-                            variant="subtitle1"
-                            fontWeight={600}
-                            sx={{ mb: 1 }}
-                        >
-                            Price
-                        </Typography> */}
-                        <Box
-                            sx={{
-                                display: "flex",
-                                flexDirection: "column",
-                            }}
-                        >
+                        <Box sx={{ display: "flex", flexDirection: "column" }}>
                             <InputLabel
                                 variant="standard"
                                 htmlFor="price-input"
@@ -450,107 +479,17 @@ const CreateProductForm = ({
 
                         <Divider sx={{ my: 2 }} />
 
-                        <Box>
-                            <Button
-                                component="label"
-                                role={undefined}
-                                variant="contained"
-                                tabIndex={-1}
-                                startIcon={<CloudUploadIcon />}
-                                sx={{ maxWidth: 320 }}
-                            >
-                                Upload photos
-                                <VisuallyHiddenInput
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleAddNewImages}
-                                    multiple
-                                />
-                            </Button>
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ ml: 1 }}
-                            >
-                                Add clear photos of the instrument and any
-                                accessories.
-                            </Typography>
-
-                            {newImages.length > 0 && (
-                                <Box sx={{ mt: 2 }}>
-                                    <Typography
-                                        variant="subtitle1"
-                                        sx={{ mb: 1 }}
-                                    >
-                                        Selected photos
-                                    </Typography>
-                                    <Stack
-                                        direction="row"
-                                        spacing={2}
-                                        flexWrap="wrap"
-                                        useFlexGap
-                                    >
-                                        {newImages.map((img, index) => (
-                                            <Box
-                                                key={index}
-                                                sx={{
-                                                    position: "relative",
-                                                    width: 120,
-                                                    height: 120,
-                                                    borderRadius: 1,
-                                                    overflow: "hidden",
-                                                    border: "1px solid #ddd",
-                                                }}
-                                            >
-                                                <Box
-                                                    component="img"
-                                                    src={img.previewUrl}
-                                                    alt={img.file.name}
-                                                    sx={{
-                                                        width: "100%",
-                                                        height: "100%",
-                                                        objectFit: "cover",
-                                                    }}
-                                                />
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() =>
-                                                        handleRemoveNewImage(
-                                                            index
-                                                        )
-                                                    }
-                                                    sx={{
-                                                        position: "absolute",
-                                                        top: 2,
-                                                        right: 2,
-                                                        bgcolor:
-                                                            "rgba(0,0,0,0.4)",
-                                                        "&:hover": {
-                                                            bgcolor:
-                                                                "rgba(0,0,0,0.6)",
-                                                        },
-                                                    }}
-                                                >
-                                                    <DeleteIcon
-                                                        fontSize="small"
-                                                        sx={{ color: "white" }}
-                                                    />
-                                                </IconButton>
-                                            </Box>
-                                        ))}
-                                    </Stack>
-                                </Box>
-                            )}
-                            {submitted && requiredFieldErrors.images && (
-                                <Typography
-                                    variant="caption"
-                                    color="error"
-                                    sx={{ display: "block", mt: 0.5 }}
-                                >
-                                    {requiredFieldErrors.images}
-                                </Typography>
-                            )}
-                        </Box>
+                        <NewImagesField
+                            images={newImages}
+                            onAddImages={handleAddNewImages}
+                            onRemoveImage={handleRemoveNewImage}
+                            hasError={submitted && Boolean(requiredFieldErrors.images)}
+                            errorMessage={requiredFieldErrors.images}
+                            buttonLabel="Upload photos"
+                            helperText="Up to 6 images. JPG, PNG or WEBP. Max 5 MB each."
+                            selectedTitle="Selected photos"
+                            accept="image/jpeg,image/png,image/webp"
+                        />
 
                         <Divider sx={{ my: 2 }} />
 
@@ -567,22 +506,14 @@ const CreateProductForm = ({
                             }
                             label="I accept the marketplace terms and conditions."
                         />
+
                         {submitted && requiredFieldErrors.accept && (
                             <Typography variant="caption" color="error">
                                 {requiredFieldErrors.accept}
                             </Typography>
                         )}
 
-                        {error && (
-                            <Typography color="error" variant="body2">
-                                ici {error}
-                            </Typography>
-                        )}
-                        {info && (
-                            <Typography color="primary" variant="body2">
-                                {info}
-                            </Typography>
-                        )}
+                        <FormStatusMessage error={error} info={info} />
 
                         <Box
                             sx={{ display: "flex", justifyContent: "flex-end" }}
@@ -591,7 +522,7 @@ const CreateProductForm = ({
                                 type="submit"
                                 variant="contained"
                                 color="primary"
-                                disabled={loading || !isValid}
+                                disabled={loading}
                                 sx={{ maxWidth: 260 }}
                             >
                                 {loading ? (
@@ -599,7 +530,7 @@ const CreateProductForm = ({
                                         <CircularProgress
                                             size={20}
                                             sx={{ mr: 1 }}
-                                        />{" "}
+                                        />
                                         Publishing…
                                     </>
                                 ) : (
