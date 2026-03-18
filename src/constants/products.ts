@@ -23,3 +23,8 @@ export const SORT_OPTIONS = [
     { label: "Price: low → high", value: "PRICE_ASC" },
     { label: "Price: high → low", value: "PRICE_DESC" },
 ];
+
+export const MAX_FILES = 6;
+export const MAX_FILE_SIZE_MB = 5;
+export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];

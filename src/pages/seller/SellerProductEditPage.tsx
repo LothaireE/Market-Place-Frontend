@@ -42,7 +42,7 @@ const GET_PRODUCT_BY_ID = gql`
             id
             name
             description
-            price
+            unitPrice
             condition
             sellerProfile {
                 user {
