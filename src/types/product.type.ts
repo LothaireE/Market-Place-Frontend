@@ -72,9 +72,9 @@ export type PaginationInput = {
 
 export type ProductFilterInput = {
     ids?: string[] | null;
-    search?: string;
-    category?: string;
-    condition?: [ProductCondition] | null;
+    search?: string; //| null;
+    category?: string; //| null;
+    condition?: ProductCondition[] | null;
     minPrice?: number | null;
     maxPrice?: number | null;
 };
