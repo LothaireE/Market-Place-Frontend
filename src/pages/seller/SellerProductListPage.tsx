@@ -339,13 +339,6 @@ const SellerProductListPage = () => {
                         >
                             Reset filters
                         </Button>
-                        {/* <Button
-                            size="small"
-                            variant="contained"
-                            onClick={() => refetch()}
-                        >
-                            Appliquer
-                        </Button> */}
                     </Stack>
                 </Stack>
             </Paper>
@@ -405,19 +398,6 @@ const SellerProductListPage = () => {
                                 },
                             }}
                         >
-                            {/* <Avatar
-                                variant="rounded"
-                                src={product.images?.[0]?.url}
-                                
-                                sx={{
-                                    width: 100,
-                                    height: 100,
-                                    borderRadius: 2,
-                                    flexShrink: 0,
-                                    flex: 2,
-                                    objectFit:"contain"
-                                }}
-                            /> */}
                              {thumbnail? <Box
                                 component="img"
                                 src={thumbnail}
@@ -510,7 +490,6 @@ const SellerProductListPage = () => {
                                     <EditIcon />
                                 </IconButton>
                                 <IconButton
-                                    // onClick={() => handleDelete(product.id)}
                                     onClick={() => {
                                         handleOpen();
                                         setDeleteModal({

@@ -35,8 +35,6 @@ type LoadProductByNameType = {
     currentPage: number;
 };
 
-const mainNavLinks = MAIN_NAV_LINKS;
-
 const AppHeader = () => {
     const { isAuthenticated } = useAuthContext();
     const navigate = useNavigate();
@@ -174,7 +172,7 @@ const AppHeader = () => {
                                     justifyContent: "center",
                                 }}
                             >
-                                {mainNavLinks.map((link) => (
+                                {MAIN_NAV_LINKS.map((link) => (
                                     <RouterLinkButton
                                         key={link.to}
                                         to={link.to}

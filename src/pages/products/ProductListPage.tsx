@@ -31,7 +31,6 @@ import type {
     ProductCondition,
     ProductFilterInput,
     ProductListItem,
-    // ProductImage,
     ProductListResponse,
     SelectedCategory,
 } from "../../types/product.type";
@@ -117,18 +116,15 @@ const ProductList = () => {
             conditionArray && conditionArray.length > 0 ? conditionArray : null,
     } as ProductFilterInput;
 
-    // Keep local page state in sync with the URL (?page=)
+    // this uef here is there to keep local page state in sync with the url (?page=)
     useEffect(() => {
         setPage(safePage);
     }, [safePage]);
-    console.log("Current page:", page);
-    console.log("safePage", safePage);
 
-    // Build pagination input dynamically from UI state
     const paginationInput: PaginationInput = (() => {
         if (sort === "PRICE_ASC") {
             return {
-                page: page, // String(page),
+                page: page,
                 pageSize: DEFAULT_PAGE_SIZE,
                 sortBy: "PRICE",
                 sortDirection: "ASC",
@@ -136,15 +132,15 @@ const ProductList = () => {
         }
         if (sort === "PRICE_DESC") {
             return {
-                page: page, //String(page),
+                page: page,
                 pageSize: DEFAULT_PAGE_SIZE,
                 sortBy: "PRICE",
                 sortDirection: "DESC",
             };
         }
-        // NEWEST
+
         return {
-            page: page, //String(page),
+            page: page ?? 1,
             pageSize: DEFAULT_PAGE_SIZE,
             sortBy: "DATE",
             sortDirection: "DESC",
@@ -232,7 +228,7 @@ const ProductList = () => {
         await loadProductByName({
             variables: {
                 pagination: {
-                    page: "1",
+                    page: 1,
                     pageSize: DEFAULT_PAGE_SIZE,
                     sortBy: "DATE",
                     sortDirection: "DESC",
@@ -280,7 +276,6 @@ const ProductList = () => {
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
-            {/* HEADER */}
             <Box sx={{ mb: 3 }}>
                 <Stack direction="row" spacing={1} alignItems="center">
                     <Typography variant="h4" fontWeight={600}>
@@ -313,7 +308,6 @@ const ProductList = () => {
             )}
 
             <Grid container spacing={3}>
-                {/* dashboard */}
                 <Grid size={{ xs: 12, md: 2 }}>
                     <Paper
                         elevation={1}
@@ -383,7 +377,6 @@ const ProductList = () => {
                         </FormGroup>
                     </Paper>
 
-                    {/* Petit encart info vendeur */}
                     <Paper
                         variant="outlined"
                         sx={{
@@ -422,9 +415,7 @@ const ProductList = () => {
                     </Paper>
                 </Grid>
 
-                {/* LISTE PRODUITS */}
                 <Grid size={{ xs: 12, md: 9 }}>
-                    {/* Bar de recherche + tri */}
                     <Paper
                         elevation={0}
                         sx={{
@@ -491,7 +482,6 @@ const ProductList = () => {
                         </Stack>
                     </Paper>
 
-                    {/* Contenu liste */}
                     {loading && (
                         <Box
                             sx={{
@@ -547,7 +537,6 @@ const ProductList = () => {
                         ))}
                     </Grid>
 
-                    {/* Pagination */}
                     {products.length > 0 && (
                         <Box
                             sx={{
