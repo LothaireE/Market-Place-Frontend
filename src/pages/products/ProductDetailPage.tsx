@@ -71,10 +71,6 @@ const ProductDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    // const { isAuthenticated } = useAuthContext();
-    // const cart = useCartContext();
-    // const favorites = useFavoritesContext();
-
     const { data, loading, error } = useQuery<ProductQueryResponse>(
         GET_PRODUCT_BY_ID,
         {
