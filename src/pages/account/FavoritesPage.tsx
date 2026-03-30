@@ -70,7 +70,7 @@ const FavoritesPage = () => {
     const handleAddToCart = async (fav: FavoriteProduct) => {
         const alreadyInCart = isInCart(fav.product.id);
         if (alreadyInCart) await removeItem(fav.product.id);
-        else await addItem(fav.product, 1);
+        else await addItem(fav.product.id, fav.product.name, 1);
     };
 
     const handleViewDetails = (id: string) => {
@@ -127,7 +127,7 @@ const FavoritesPage = () => {
 
             {/* Empty state */}
             {favoritesList.length === 0 && (
-                <EmptyList 
+                <EmptyList
                     header="You have not added any favorites yet"
                     textContent="Browse guitars, synths, pedals and studio gear. Tap the heart icon on any listing you like."
                     buttonLabel="Explore gear"
