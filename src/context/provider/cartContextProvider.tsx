@@ -1,99 +1,218 @@
-import { useEffect, useState, useRef } from "react";
-// import { API_URLS } from "../config/env";
+import { useEffect, useMemo, useState } from "react";
 import CartContext from "../cartContext";
-// import type { Product } from "../library/graphql/queries/products";
-// import type { Product } from "../types/product.type";
-import type { CartItem, CartProduct } from "../../types/cart.type";
+import { useAuthContext } from "../useAppContext";
 
-const CART = "mp_user_cart";
+const MP_CART = "mp_user_cart";
+
+type CartItem = {
+  productId: string;
+  productName: string;
+  quantity: number;
+};
+
+type CartContent = {
+  username: string;
+  items: CartItem[];
+};
+
+const EMPTY_CART: CartContent = {
+  username: "",
+  items: [],
+};
+
+function isCartItem (item: unknown): item is CartItem {
+    return (
+        typeof item === "object" &&
+        item !== null &&
+        typeof (item as CartItem).productId === "string" &&
+        typeof (item as CartItem).productName === "string" &&
+        typeof (item as CartItem).quantity === "number"
+    )
+}
+
+function getStoredCart(): CartContent | null {
+    try {
+        const storage = localStorage.getItem(MP_CART);
+        if (!storage) return null;
+
+        const parsedCart = JSON.parse(storage);
+
+        if (typeof parsedCart !== "object" ||
+            parsedCart === null ||
+            typeof parsedCart.username !== "string" ||
+            !Array.isArray(parsedCart.items)
+            ) {
+            return null;
+        }
+
+        const items = parsedCart.items.filter(isCartItem)
+
+        return {
+            username: parsedCart.username,
+            items
+        };
+    } catch {
+        return null;
+    }
+}
+
+function saveOrClearCart(cart: CartContent) {
+    if (!cart.username || cart.items.length === 0) {
+        localStorage.removeItem(MP_CART);
+        return;
+    }
+
+    localStorage.setItem(MP_CART, JSON.stringify(cart));
+}
 
 export default function CartContextProvider({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
-    const isMounted = useRef(false); // prevent double execution in StrictMode
+        children,
+    }: {
+        children: React.ReactNode;
+    }) {
+    const { user } = useAuthContext();
+    const username = user?.username ?? "";
 
-    const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    const [cartContent, setCartContent] = useState<CartContent>(EMPTY_CART);
+
+
+    console.log({username})
 
     useEffect(() => {
-        if (isMounted.current) return;
-        isMounted.current = true;
+        if (!username) {
+            setCartContent(EMPTY_CART);
+            localStorage.removeItem(MP_CART);
+            return;
+        }
 
-        const storedCart = localStorage.getItem(CART);
+        const storedCart = getStoredCart();
 
-        if (storedCart) setCartItems(JSON.parse(storedCart));
-    }, [cartItems]);
+        if (!storedCart) {
+            setCartContent({
+                username,
+                items: [],
+            });
+            return;
+        }
 
-    // TODO implement multiple product options on orders
-    async function addItem(product: CartProduct, quantity: number = 1) {
-        setCartItems((prevItems) => {
-            let cart: CartItem[] = [];
+        if (storedCart.username !== username) {
+            localStorage.removeItem(MP_CART);
+            setCartContent({
+                username,
+                items: [],
+            });
+            return;
+        }
 
-            const fixedQuantity = quantity === 1 ? quantity : 1; // force quantity to 1 as long as no multiple product options available on orders
+        setCartContent(storedCart);
+    }, [username]);
 
-            const existingItem = prevItems.find(
-                (item) => item.product.id === product.id,
-            );
+    const cartItems = cartContent.items;
 
-            if (existingItem) return prevItems;
+    async function addItem(
+        newItemId: string,
+        newItemName: string,
+        quantity: number = 1
+    ) {
+        if (!username) return;
 
-            cart = [...prevItems, { product, quantity: fixedQuantity }];
+        setCartContent((prevCart) => {
+        const currentCart =
+            prevCart.username === username
+            ? prevCart
+            : { username, items: [] as CartItem[] };
 
-            // if (existingItem) {
-            //     cart = prevItems.map((item) =>
-            //         item.product.id === product.id
-            //             ? { ...item, quantity: item.quantity + quantity }
-            //             : item
-            //     );
-            // } else {
-            //     cart = [...prevItems, { product, quantity }];
-            // }
-            localStorage.setItem(CART, JSON.stringify(cart));
-            return cart;
+        const fixedQuantity = quantity === 1 ? 1 : 1;
+
+        const existingItem = currentCart.items.find(
+            (item) => item.productId === newItemId
+        );
+
+        if (existingItem) {
+            return currentCart;
+        }
+
+        const newCart: CartContent = {
+            username,
+            items: [
+            ...currentCart.items,
+            {
+                productId: newItemId,
+                productName: newItemName,
+                quantity: fixedQuantity,
+            },
+            ],
+        };
+
+        saveOrClearCart(newCart);
+        return newCart;
         });
     }
 
     async function removeItem(productId: string) {
-        setCartItems((prevItems) => {
-            const cart = prevItems
-                .map((item) =>
-                    item.product.id === productId
-                        ? { ...item, quantity: item.quantity - 1 }
-                        : item,
-                )
-                .filter((item) => item.quantity > 0);
-            localStorage.setItem(CART, JSON.stringify(cart));
-            return cart;
+        if (!username) return;
+
+        setCartContent((prevCart) => {
+        if (prevCart.username !== username) {
+            return { username, items: [] };
+        }
+
+        const updatedItems = prevCart.items
+            .map((item) =>
+            item.productId === productId
+                ? { ...item, quantity: item.quantity - 1 }
+                : item
+            )
+            .filter((item) => item.quantity > 0);
+
+        const newCart: CartContent = {
+            username,
+            items: updatedItems,
+        };
+
+        saveOrClearCart(newCart);
+        return newCart;
         });
     }
 
     async function removeMultipleItems(productIds: string[]) {
-        setCartItems((prevItems) => {
-            const cart = prevItems
+        if (!username) return;
+
+        setCartContent((prevCart) => {
+            if (prevCart.username !== username) {
+                return { username, items: [] };
+            }
+
+            const updatedItems = prevCart.items
                 .map((item) =>
-                    productIds.includes(item.product.id)
-                        ? { ...item, quantity: item.quantity - 1 }
-                        : item,
+                productIds.includes(item.productId)
+                    ? { ...item, quantity: item.quantity - 1 }
+                    : item
                 )
                 .filter((item) => item.quantity > 0);
-            localStorage.setItem(CART, JSON.stringify(cart));
-            return cart;
+
+            const newCart: CartContent = {
+                username,
+                items: updatedItems,
+            };
+
+            saveOrClearCart(newCart);
+            return newCart;
         });
     }
 
     async function clearCart() {
-        localStorage.removeItem(CART);
-        setCartItems([]);
+        localStorage.removeItem(MP_CART);
+        setCartContent(username ? { username, items: [] } : EMPTY_CART);
     }
 
-    const totalQuantity = cartItems.reduce(
-        (sum, item) => sum + item.quantity,
-        0,
+    const totalQuantity = useMemo(
+        () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
+        [cartItems]
     );
 
     const isInCart = (productId: string) =>
-        cartItems.some((it) => it.product.id === productId);
+        cartItems.some((item) => item.productId === productId);
 
     const contextValue = {
         addItem,

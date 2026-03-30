@@ -65,7 +65,7 @@ export default function CartPage() {
     const [toastSeverity, setToastSeverity] = useState<ToastSeverity>("info");
 
     const itemsIds = useMemo(
-        () => cartItems.map((item) => item.product.id),
+        () => cartItems.map((item) => item.productId),
         [cartItems],
     );
 
@@ -231,7 +231,9 @@ export default function CartPage() {
                     {checkoutLoading ? "Processing..." : "Checkout"}
                 </Button>
 
-                <Button variant="contained" onClick={handleCancelAllOrders}>
+                <Button variant="contained"
+                disabled={checkoutLoading || !canCheckout}
+                onClick={handleCancelAllOrders}>
                     Cancel all
                 </Button>
             </Box>

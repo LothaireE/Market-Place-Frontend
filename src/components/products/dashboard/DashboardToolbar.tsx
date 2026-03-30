@@ -77,9 +77,14 @@ const DashboardToolbar = ({
                     <Typography variant="body2" color="text.secondary">
                         Sort by
                     </Typography>
-                    <Select size="small" value={sort} onChange={handleSortChange} fullWidth>
+                    <Select size="small" value={sort} onChange={handleSortChange} 
+                    // fullWidth
+                    sx={{ 
+                        // border: "red solid 2px", 
+                        maxWidth: 130}}
+                    >
                         {sortOptions.map((opt) => (
-                            <MenuItem key={opt.value} value={opt.value}>
+                            <MenuItem key={opt.value} value={opt.value} sx={{overflow: "hidden"}}>
                                 {opt.label}
                             </MenuItem>
                         ))}

@@ -27,6 +27,8 @@ import { SEARCH_PRODUCT_BY_NAME } from "../../library/graphql/queries/products";
 import { useOutsideClick } from "../../hooks/useOutsideClick";
 import SearchDropDownSelector from "./search/SearchDropDownSelector";
 import useOnBoardNavigate from "../../hooks/onBoardNavigate";
+import { DEFAULT_PAGE_SIZE } from "../../constants/products";
+import { getPaginationInput } from "../../utils/getPaginationInput";
 
 type LoadProductByNameType = {
     products: { items: Product[] };
@@ -52,12 +54,8 @@ const AppHeader = () => {
     const [searchInputValue, setSearchInputValue] = useState("");
     const [searchResult, setSearchResult] = useState<Product[]>([]);
 
-    const pagination = {
-        page: null,
-        pageSize: null,
-        sortBy: "DATE",
-        sortDirection: "DESC",
-    };
+    const pagination = getPaginationInput(1, "NEWEST", DEFAULT_PAGE_SIZE) 
+
     //TODO: rewrite all the other useLazyQuery
     //  no more onCompleted, uef now
     // https://github.com/apollographql/apollo-client/issues/12352

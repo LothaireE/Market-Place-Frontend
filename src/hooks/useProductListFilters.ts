@@ -19,7 +19,7 @@ export const useProductListFilters = () => {
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
     const conditionParam = searchParams.get("condition") ?? null;
-    const sortParam = searchParams.get("sort") ?? "DATE" // "NEWEST";
+    const sortParam = searchParams.get("sort") ?? "NEWEST";
     const rawPage = Number(searchParams.get("page") ?? "1");
     const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
 

@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import {
     Box,
     Container,
@@ -60,6 +60,7 @@ const ProductList = () => {
         maxPrice ?? 5000,
     ]);
     const [searchInputValue, setSearchInputValue] = useState("");
+    const [searchResult, setSearchResult] = useState<ProductListItem[]>([])
 
     const { data, loading, error } = useQuery<ProductListResponse>(
         GET_PRODUCTS_LIST_PAGE,
@@ -74,9 +75,15 @@ const ProductList = () => {
     const [loadProductByName, { data: searchData }] =
         useLazyQuery<LoadProductByNameType>(SEARCH_PRODUCT_BY_NAME);
 
-    const searchResult: ProductListItem[] = searchData?.products?.items ?? [];
+    // const searchResult: ProductListItem[] = searchData?.products?.items ?? [];
     const products = data?.products.items ?? [];
     const totalPages = data?.products.totalPages ?? 1;
+
+    useEffect(() => {
+        if (searchData?.products?.items) {
+            setSearchResult(searchData.products.items);
+        }
+    }, [searchData]);
 
     const handleStartSellingClick = () => {
         onBoardNavigate("/seller/new");

@@ -55,7 +55,6 @@ const SellerProfilePage = () => {
     const [bio, setBio] = useState("");
     const [payoutAccount, setPayoutAccount] = useState("");
     const [location, setLocation] = useState("");
-    const [avatarUrl, setAvatarUrl] = useState("");
     const [info, setInfo] = useState<string | null>(null);
     const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -81,8 +80,8 @@ const SellerProfilePage = () => {
                         bio,
                         payoutAccount,
                         shopName,
-                        userId: sellerProfile.id, // ou sellerProfile.user.id selon ton backend
-                        // avatarUrl: avatarUrl || null, // à activer si ton backend le gère
+                        userId: sellerProfile.id, // 
+                        // avatarUrl: avatarUrl || null, 
                     },
                 },
                 optimisticResponse: {
@@ -212,7 +211,8 @@ const SellerProfilePage = () => {
                         }}
                     >
                         <Avatar
-                            src={avatarUrl || undefined}
+                            // src={avatarUrl || undefined}
+                            src={ undefined}
                             sx={{
                                 width: 90,
                                 height: 90,
@@ -358,13 +358,13 @@ const SellerProfilePage = () => {
                                 helperText="Tell buyers who you are, what kind of instruments you sell, and how you take care of your gear."
                             />
 
-                            <TextField
+                            {/* <TextField
                                 label="Avatar image URL"
                                 value={avatarUrl}
                                 onChange={(e) => setAvatarUrl(e.target.value)}
                                 fullWidth
                                 helperText="Optional. Link to an image that represents your shop (logo, profile picture…)."
-                            />
+                            /> */}
 
                             {saveError && (
                                 <Typography color="error" variant="body2">
