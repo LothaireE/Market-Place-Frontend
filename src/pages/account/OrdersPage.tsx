@@ -18,6 +18,7 @@ import { CANCEL_ORDER } from "../../library/graphql/mutations/orders";
 import { USER_ORDERS } from "../../library/graphql/queries/orders";
 import type { OrderStatus } from "../../types/order.type";
 import { useNavigate } from "react-router";
+import EmptyList from "../../components/common/EmptyList";
 
 type UserOrdersResponse = {
     userOrders: {
@@ -85,6 +86,16 @@ export default function OrdersPage() {
     if (error)
         return <Box sx={{ p: 2, color: "crimson" }}>{error.message}</Box>;
 
+    if (!orders.length) {
+       return (
+        <EmptyList 
+            header="You haven't place any order yet"
+            textContent="Browse guitars, synths, pedals and studio gear."
+            buttonLabel="Explore gear"
+            handleClick={()=> navigate("/products")}
+            />
+       ) 
+    }
     return (
         <Box sx={{ maxWidth: 980, mx: "auto", p: 2 }}>
             <Stack
@@ -93,7 +104,7 @@ export default function OrdersPage() {
                 alignItems={{ xs: "flex-start", sm: "center" }}
                 gap={1}
             >
-                <Typography variant="h6">Dashboard • Orders</Typography>
+                <Typography variant="h6">Orders</Typography>
 
                 <Stack direction="row" gap={1} alignItems="center">
                     <Chip label={`${total} total`} />
@@ -256,6 +267,7 @@ export default function OrdersPage() {
                         No orders for this filter.
                     </Typography>
                 )}
+
             </Stack>
         </Box>
     );

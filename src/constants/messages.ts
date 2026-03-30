@@ -6,12 +6,12 @@ export const ABOUT_TEXTS = [
     {
         id: "about_1",
         content:
-            "This marketplace frontend provides an interface for browsing, searching, and purchasing goods and services. It prioritizes usability and performance so customers can find what they need quickly on both desktop and mobile.",
+            "This marketplace frontend provides an interface for browsing and purchasing goods. It prioritizes usability and performance so customers can find what they need quickly on both desktop and mobile.",
     },
     {
         id: "about_2",
         content:
-            "Built with React, TypeScript and Material UI, the application is modular and easy to extend. It communicates with backend APIs for listings, user accounts and orders, so the UI remains fast and responsive as data changes.",
+            "Built with React + Vite, TypeScript and Material UI, the application is modular and easy to extend. It communicates with backend APIs for listings, user accounts and orders, so the UI remains fast and responsive as data changes.",
     },
     {
         id: "about_3",

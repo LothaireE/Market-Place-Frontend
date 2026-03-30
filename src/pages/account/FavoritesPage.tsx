@@ -24,6 +24,7 @@ import {
     useFavoritesContext,
 } from "../../context/useAppContext";
 import type { FavoriteProduct } from "../../types/product.type";
+import EmptyList from "../../components/common/EmptyList";
 
 const GET_MY_FAVORITES = gql`
     query UserFavorites {
@@ -69,7 +70,7 @@ const FavoritesPage = () => {
     const handleAddToCart = async (fav: FavoriteProduct) => {
         const alreadyInCart = isInCart(fav.product.id);
         if (alreadyInCart) await removeItem(fav.product.id);
-        else await addItem(fav.product, 1);
+        else await addItem(fav.product.id, fav.product.name, 1);
     };
 
     const handleViewDetails = (id: string) => {
@@ -111,7 +112,6 @@ const FavoritesPage = () => {
     // favorites[0].product
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
-            {/* Header */}
             <Box sx={{ mb: 3 }}>
                 <Stack direction="row" spacing={1} alignItems="center">
                     <FavoriteIcon color="primary" />
@@ -127,38 +127,14 @@ const FavoritesPage = () => {
 
             {/* Empty state */}
             {favoritesList.length === 0 && (
-                <Paper
-                    sx={{
-                        p: 3,
-                        borderRadius: 3,
-                        textAlign: "center",
-                        border: (theme) =>
-                            `1px dashed ${theme.palette.divider}`,
-                    }}
-                >
-                    <Typography variant="h6" gutterBottom>
-                        You have not added any favorites yet
-                    </Typography>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 2 }}
-                    >
-                        Browse guitars, synths, pedals and studio gear. Tap the
-                        heart icon on any listing you like.
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        startIcon={<MusicNoteIcon />}
-                        onClick={() => navigate("/products")}
-                        sx={{ borderRadius: 999 }}
-                    >
-                        Explore gear
-                    </Button>
-                </Paper>
+                <EmptyList
+                    header="You have not added any favorites yet"
+                    textContent="Browse guitars, synths, pedals and studio gear. Tap the heart icon on any listing you like."
+                    buttonLabel="Explore gear"
+                    handleClick={() => navigate("/products")}
+                />
             )}
 
-            {/* Favorites grid */}
             <Grid container spacing={3}>
                 {favoritesList.map(
                     (fav) => (
@@ -178,7 +154,6 @@ const FavoritesPage = () => {
                                         },
                                     }}
                                 >
-                                    {/* Image */}
                                     <Avatar
                                         variant="rounded"
                                         src={fav.product.images?.[0]?.url}
@@ -191,8 +166,6 @@ const FavoritesPage = () => {
                                     >
                                         <MusicNoteIcon />
                                     </Avatar>
-
-                                    {/* Content */}
                                     <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                                         <Stack
                                             direction="row"

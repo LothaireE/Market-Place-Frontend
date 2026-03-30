@@ -65,7 +65,7 @@ const DisplayProductDetails = (product: ProductDetail) => {
 
     const handleAddToCart = async () => {
         if (!product) return;
-        await cart.addItem(product, 1);
+        await cart.addItem(product.id, product.name, 1);
     };
 
     const removeItem = async () => {

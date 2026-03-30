@@ -108,7 +108,7 @@ export default function CheckoutPage() {
 
     const orders: UserPendingOrderItem[] = useMemo(
         () => data?.userPendingOrders?.items ?? [],
-        [data]
+        [data],
     );
 
     if (userOrdersError)
@@ -116,7 +116,7 @@ export default function CheckoutPage() {
 
     const ordersTotalAmount = useMemo(
         () => orders.reduce((sum: number, o) => sum + o.totalAmount, 0),
-        [orders]
+        [orders],
     );
 
     const currency = orders[0]?.currency ?? "EUR";
@@ -124,7 +124,9 @@ export default function CheckoutPage() {
 
     const setLoading = (orderId: string, isLoading: boolean) => {
         setLoadingOrderIds((prev) =>
-            isLoading ? [...prev, orderId] : prev.filter((id) => id !== orderId)
+            isLoading
+                ? [...prev, orderId]
+                : prev.filter((id) => id !== orderId),
         );
     };
 

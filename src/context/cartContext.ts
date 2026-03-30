@@ -1,8 +1,8 @@
 import { createContext } from "react";
-import type { CartProduct, CartItem } from "../types/cart.type";
+import type { CartItem } from "../types/cart.type";
 
 export type CartContextType = {
-    addItem: (product: CartProduct, quantity?: number) => Promise<void>;
+    addItem: (productId: string, productName: string, quantity?: number) => Promise<void>;
     removeItem: (productId: string) => Promise<void>;
     removeMultipleItems: (productIds: string[]) => Promise<void>;
     clearCart: () => Promise<void>;

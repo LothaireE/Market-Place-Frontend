@@ -161,7 +161,7 @@ export default function SellerOnboardingPage() {
                                 >
                                     <StorefrontIcon fontSize="small" />
                                     <Typography variant="h6" fontWeight={800}>
-                                        Seller profile
+                                        Your profile
                                     </Typography>
                                 </Stack>
 
@@ -177,7 +177,7 @@ export default function SellerOnboardingPage() {
                                 />
 
                                 <TextField
-                                    label="Bio (optional)"
+                                    label="Bio"
                                     placeholder="Tell buyers what you sell and what they can expect."
                                     value={bio}
                                     onChange={(e) => setBio(e.target.value)}
@@ -198,12 +198,12 @@ export default function SellerOnboardingPage() {
                                         variant="subtitle1"
                                         fontWeight={800}
                                     >
-                                        Payouts (optional for now)
+                                        Payouts
                                     </Typography>
                                 </Stack>
 
                                 <TextField
-                                    label="Payout account (optional)"
+                                    label="Payout account"
                                     placeholder="IBAN / PayPal / Stripe account id..."
                                     value={payoutAccount}
                                     onChange={(e) =>
@@ -235,12 +235,12 @@ export default function SellerOnboardingPage() {
                                             control={<Radio />}
                                             label="Unverified"
                                         />
-                                        <FormControlLabel
+                                        {/* <FormControlLabel
                                             value="VERIFIED"
                                             control={<Radio />}
                                             label="Verified (admin only)"
                                             disabled
-                                        />
+                                        /> */}
                                     </RadioGroup>
                                 </FormControl>
 
@@ -277,7 +277,7 @@ export default function SellerOnboardingPage() {
                                                 Creating...
                                             </>
                                         ) : (
-                                            "Create seller profile"
+                                            "Get on board"
                                         )}
                                     </Button>
                                 </Box>

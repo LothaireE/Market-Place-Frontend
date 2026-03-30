@@ -10,10 +10,7 @@ import {
     Alert,
 } from "@mui/material";
 import { useNavigate } from "react-router";
-import {
-    CANCEL_ALL_ORDERS,
-    CREATE_CHECKOUT,
-} from "../../library/graphql/mutations/orders";
+import { CREATE_CHECKOUT } from "../../library/graphql/mutations/orders";
 import { useCartContext } from "../../context/useAppContext";
 import Toast from "../../components/common/Toast";
 import { useMemo, useState } from "react";
@@ -57,7 +54,7 @@ type CartPageProduct = {
 type ToastSeverity = "success" | "error" | "info" | "warning";
 
 export default function CartPage() {
-    const { cartItems, removeItem } = useCartContext();
+    const { cartItems, removeItem, clearCart } = useCartContext();
     const navigate = useNavigate();
 
     const [openToast, setOpenToast] = useState(false);
@@ -65,7 +62,7 @@ export default function CartPage() {
     const [toastSeverity, setToastSeverity] = useState<ToastSeverity>("info");
 
     const itemsIds = useMemo(
-        () => cartItems.map((item) => item.product.id),
+        () => cartItems.map((item) => item.productId),
         [cartItems],
     );
 
@@ -81,14 +78,6 @@ export default function CartPage() {
 
     const [createCheckout, { loading: checkoutLoading, error: checkoutError }] =
         useMutation(CREATE_CHECKOUT);
-    const [cancelAllOrders] = useMutation(CANCEL_ALL_ORDERS);
-
-    const handleCancelAllOrders = async () => {
-        const allCancelled = await cancelAllOrders();
-        if (allCancelled?.data) {
-            console.log(allCancelled.data);
-        }
-    };
 
     const products = useMemo(
         () => data?.productsByIds ?? [],
@@ -175,11 +164,13 @@ export default function CartPage() {
         }
     };
 
-    // const goToCreateCheckout = () => {
-    //     navigate("/account/create-checkout", {
-    //         state: { products },
-    //     });
-    // };
+    const handleClearCart = () => {
+        clearCart();
+        setToastSeverity("info");
+        setToastMessage("Cart cleared.");
+        setOpenToast(true);
+    };
+
     return (
         <Box sx={{ maxWidth: 800, mx: "auto", p: 2 }}>
             <Typography variant="h6" gutterBottom>
@@ -231,8 +222,12 @@ export default function CartPage() {
                     {checkoutLoading ? "Processing..." : "Checkout"}
                 </Button>
 
-                <Button variant="contained" onClick={handleCancelAllOrders}>
-                    Cancel all
+                <Button
+                    variant="outlined"
+                    disabled={checkoutLoading || !canCheckout}
+                    onClick={handleClearCart}
+                >
+                    Clear cart
                 </Button>
             </Box>
 
