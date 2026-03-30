@@ -11,6 +11,7 @@ export const GET_PRODUCTS = gql`
                         username
                     }
                 }
+                unitPrice
                 images {
                     publicId
                     url
