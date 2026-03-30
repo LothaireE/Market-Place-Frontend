@@ -5,29 +5,29 @@ import { useAuthContext } from "../useAppContext";
 const MP_CART = "mp_user_cart";
 
 type CartItem = {
-  productId: string;
-  productName: string;
-  quantity: number;
+    productId: string;
+    productName: string;
+    quantity: number;
 };
 
 type CartContent = {
-  username: string;
-  items: CartItem[];
+    username: string;
+    items: CartItem[];
 };
 
 const EMPTY_CART: CartContent = {
-  username: "",
-  items: [],
+    username: "",
+    items: [],
 };
 
-function isCartItem (item: unknown): item is CartItem {
+function isCartItem(item: unknown): item is CartItem {
     return (
         typeof item === "object" &&
         item !== null &&
         typeof (item as CartItem).productId === "string" &&
         typeof (item as CartItem).productName === "string" &&
         typeof (item as CartItem).quantity === "number"
-    )
+    );
 }
 
 function getStoredCart(): CartContent | null {
@@ -37,19 +37,20 @@ function getStoredCart(): CartContent | null {
 
         const parsedCart = JSON.parse(storage);
 
-        if (typeof parsedCart !== "object" ||
+        if (
+            typeof parsedCart !== "object" ||
             parsedCart === null ||
             typeof parsedCart.username !== "string" ||
             !Array.isArray(parsedCart.items)
-            ) {
+        ) {
             return null;
         }
 
-        const items = parsedCart.items.filter(isCartItem)
+        const items = parsedCart.items.filter(isCartItem);
 
         return {
             username: parsedCart.username,
-            items
+            items,
         };
     } catch {
         return null;
@@ -66,17 +67,14 @@ function saveOrClearCart(cart: CartContent) {
 }
 
 export default function CartContextProvider({
-        children,
-    }: {
-        children: React.ReactNode;
-    }) {
+    children,
+}: {
+    children: React.ReactNode;
+}) {
     const { user } = useAuthContext();
     const username = user?.username ?? "";
 
     const [cartContent, setCartContent] = useState<CartContent>(EMPTY_CART);
-
-
-    console.log({username})
 
     useEffect(() => {
         if (!username) {
@@ -112,40 +110,40 @@ export default function CartContextProvider({
     async function addItem(
         newItemId: string,
         newItemName: string,
-        quantity: number = 1
+        quantity: number = 1,
     ) {
         if (!username) return;
 
         setCartContent((prevCart) => {
-        const currentCart =
-            prevCart.username === username
-            ? prevCart
-            : { username, items: [] as CartItem[] };
+            const currentCart =
+                prevCart.username === username
+                    ? prevCart
+                    : { username, items: [] as CartItem[] };
 
-        const fixedQuantity = quantity === 1 ? 1 : 1;
+            const fixedQuantity = quantity === 1 ? 1 : 1;
 
-        const existingItem = currentCart.items.find(
-            (item) => item.productId === newItemId
-        );
+            const existingItem = currentCart.items.find(
+                (item) => item.productId === newItemId,
+            );
 
-        if (existingItem) {
-            return currentCart;
-        }
+            if (existingItem) {
+                return currentCart;
+            }
 
-        const newCart: CartContent = {
-            username,
-            items: [
-            ...currentCart.items,
-            {
-                productId: newItemId,
-                productName: newItemName,
-                quantity: fixedQuantity,
-            },
-            ],
-        };
+            const newCart: CartContent = {
+                username,
+                items: [
+                    ...currentCart.items,
+                    {
+                        productId: newItemId,
+                        productName: newItemName,
+                        quantity: fixedQuantity,
+                    },
+                ],
+            };
 
-        saveOrClearCart(newCart);
-        return newCart;
+            saveOrClearCart(newCart);
+            return newCart;
         });
     }
 
@@ -153,25 +151,25 @@ export default function CartContextProvider({
         if (!username) return;
 
         setCartContent((prevCart) => {
-        if (prevCart.username !== username) {
-            return { username, items: [] };
-        }
+            if (prevCart.username !== username) {
+                return { username, items: [] };
+            }
 
-        const updatedItems = prevCart.items
-            .map((item) =>
-            item.productId === productId
-                ? { ...item, quantity: item.quantity - 1 }
-                : item
-            )
-            .filter((item) => item.quantity > 0);
+            const updatedItems = prevCart.items
+                .map((item) =>
+                    item.productId === productId
+                        ? { ...item, quantity: item.quantity - 1 }
+                        : item,
+                )
+                .filter((item) => item.quantity > 0);
 
-        const newCart: CartContent = {
-            username,
-            items: updatedItems,
-        };
+            const newCart: CartContent = {
+                username,
+                items: updatedItems,
+            };
 
-        saveOrClearCart(newCart);
-        return newCart;
+            saveOrClearCart(newCart);
+            return newCart;
         });
     }
 
@@ -185,9 +183,9 @@ export default function CartContextProvider({
 
             const updatedItems = prevCart.items
                 .map((item) =>
-                productIds.includes(item.productId)
-                    ? { ...item, quantity: item.quantity - 1 }
-                    : item
+                    productIds.includes(item.productId)
+                        ? { ...item, quantity: item.quantity - 1 }
+                        : item,
                 )
                 .filter((item) => item.quantity > 0);
 
@@ -208,7 +206,7 @@ export default function CartContextProvider({
 
     const totalQuantity = useMemo(
         () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
-        [cartItems]
+        [cartItems],
     );
 
     const isInCart = (productId: string) =>
